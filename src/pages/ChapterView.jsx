@@ -190,8 +190,10 @@ const ChapterView = () => {
               {content.map((q, index) => (
                 <div key={q._id || index} className="result-question">
                   <p><strong>Question {index + 1}:</strong> {q.question}</p>
-                  <p>Your answer: {q.options?.[answers[index]] || 'Not answered'}</p>
-                  <p>Correct answer: {q.options?.[q.answer]}</p>
+                  <div className="answer-row">
+                    <p className="your-answer">Your answer: {q.options?.[answers[index]] || 'Not answered'}</p>
+                    <p className="correct-answer">Correct answer: {q.options?.[q.answer]}</p>
+                  </div>
                   {q.reason && <p>Explanation: {q.reason}</p>}
                 </div>
               ))}
@@ -251,7 +253,7 @@ const ChapterView = () => {
 
       {/* Add Content for Admin */}
       {isAdmin && (
-        <div className="admin-add-content" style={{ padding: '20px', borderTop: '1px solid #eee', marginTop: '20px' }}>
+        <div className="admin-add-content">
           {!addContentOpen && (
             <button onClick={() => setAddContentOpen(true)}>Add Content</button>
           )}
@@ -276,7 +278,7 @@ const ChapterView = () => {
               }}>
                 <label>
                   Question:
-                  <textarea value={newQuestion} onChange={e => setNewQuestion(e.target.value)} required style={{ width: '100%', height: '60px' }} />
+                  <textarea value={newQuestion} onChange={e => setNewQuestion(e.target.value)} required />
                 </label>
                 <br />
                 <label>
@@ -293,7 +295,6 @@ const ChapterView = () => {
                         value={op}
                         onChange={e => setNewOptions(o => o.map((x, j) => j === i ? e.target.value : x))}
                         placeholder={`Option ${i + 1}`}
-                        style={{ width: '100%', marginBottom: '5px' }}
                       />
                     ))}
                     Correct Answer Index: <select value={newAnswer} onChange={e => setNewAnswer(parseInt(e.target.value))}>
@@ -304,7 +305,7 @@ const ChapterView = () => {
                 <br />
                 <label>
                   Explanation/Reason:
-                  <textarea value={newReason} onChange={e => setNewReason(e.target.value)} required style={{ width: '100%', height: '80px' }} />
+                  <textarea value={newReason} onChange={e => setNewReason(e.target.value)} required />
                 </label>
                 <br />
                 <button type="submit">Add Content</button>

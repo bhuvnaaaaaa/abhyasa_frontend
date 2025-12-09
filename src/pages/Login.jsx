@@ -69,8 +69,17 @@ export default function Login() {
 
     } catch (err) {
       console.error("Login error:", err);
+      const status = err.response?.status;
       const message = err.response?.data?.message || "Login failed. Please check your credentials.";
-      showNotification(message, "error");
+
+      if (status === 404 && message.includes("not found")) {
+        showNotification(`${message} Redirecting to signup...`, "info");
+        setTimeout(() => {
+          navigate("/signup");
+        }, 3000);
+      } else {
+        showNotification(message, "error");
+      }
     } finally {
       setIsLoading(false);
     }
