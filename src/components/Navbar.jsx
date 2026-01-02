@@ -1,11 +1,38 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
+import { getToken } from "../utils/auth";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [classesOptions, setClassesOptions] = useState([]);
   const [showStudyMaterialDropdown, setShowStudyMaterialDropdown] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
+
+  const handleHomeClick = () => {
+    if (location.pathname === "/") {
+      document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate("/");
+    }
+  };
+
+  const handleAboutClick = () => {
+    if (location.pathname === "/") {
+      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate("/#about");
+    }
+  };
+
+  const handleContactClick = () => {
+    if (location.pathname === "/") {
+      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate("/#contact");
+    }
+  };
 
   useEffect(() => {
     const loadClasses = async () => {
@@ -53,14 +80,14 @@ function Navbar() {
     <header>
       <nav>
         <div className="logo">
-          <img src="src/assets/images/logo.jpg" alt="logo" onClick={()=> document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })} />
+          <img src="src/assets/images/logo.jpg" alt="logo" onClick={handleHomeClick} style={{cursor: 'pointer'}} />
         </div>
 
         <div id="nav-menu-container" className="nav-menu-container">
           <div className="nav-links-main">
-            <a href="#hero">Home</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeClick(); }}>Home</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleAboutClick(); }}>About</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleContactClick(); }}>Contact</a>
             <div className="dropdown">
               <span className="dropdown-toggle" onClick={() => { setShowStudyMaterialDropdown(!showStudyMaterialDropdown); navigate('/study-material'); }}>
                 Study Material
@@ -85,9 +112,30 @@ function Navbar() {
           </div>
 
           <div className="nav-buttons">
-            <Link to="/signup">
-              <button>Sign Up</button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <button onClick={async () => {
+                  try {
+                    await api.post("/auth/logout");
+                  } catch (err) {
+                    console.warn("Logout request failed", err);
+                  }
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("hasPaid");
+                  setIsLoggedIn(false);
+                  navigate("/");
+                }}>Logout</button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <button>Login</button>
+                </Link>
+                <Link to="/signup">
+                  <button>Sign Up</button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

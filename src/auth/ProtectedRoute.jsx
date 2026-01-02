@@ -4,7 +4,7 @@ import { isActiveWithinHours } from "../utils/auth";
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
 
-  if (!token || !isActiveWithinHours(24)) {
+    if (!token || !isActiveWithinHours(72)) {
     localStorage.removeItem("token");
     return <Navigate to="/login" replace />;
   }

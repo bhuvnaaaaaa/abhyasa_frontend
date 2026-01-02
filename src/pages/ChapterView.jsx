@@ -17,7 +17,7 @@ const ChapterView = () => {
   const [, setScrollCount] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const hasPaid = localStorage.getItem("paid") === "true"; // simulate payment status
+  const hasPaid = localStorage.getItem("hasPaid") === "true"; // payment status from backend
 
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
@@ -42,6 +42,9 @@ const ChapterView = () => {
   const [answers, setAnswers] = useState([]);
   const [showResults, setShowResults] = useState(false);
 
+  const [currentInTextQuestion, setCurrentInTextQuestion] = useState(0);
+  const [showInTextSolution, setShowInTextSolution] = useState(false);
+
   // Admin add content states
   const [addContentOpen, setAddContentOpen] = useState(false);
   const [addingMCQ, setAddingMCQ] = useState(true);
@@ -55,6 +58,12 @@ const ChapterView = () => {
       try {
         const res = await api.get(`/chapters/${id}`);
         setChapter(res.data);
+        // Reset states for demo
+        setCurrentInTextQuestion(0);
+        setShowInTextSolution(false);
+        setCurrentQuestion(0);
+        setAnswers([]);
+        setShowResults(false);
       } catch (err) {
         console.error("Error fetching chapter:", err);
       }
@@ -88,7 +97,7 @@ const ChapterView = () => {
         const handleScroll = () => {
           setScrollCount(prev => {
             const newCount = prev + 1;
-            if (newCount >= 3) {
+            if (newCount >= 2) {
               setShowAuthModal(true);
             }
             return newCount;
@@ -170,12 +179,38 @@ const ChapterView = () => {
               />
             </div>
           )}
-          <div className="question-list">
-            {content.map((q, index) => (
-              <div key={q._id || index} className="question-item">
-                <p>{index + 1}. {q.question}</p>
+          <div className="in-text-solutions">
+            {content.length > 0 ? (
+              <div className="question-block">
+                <p>Question {currentInTextQuestion + 1}</p>
+                <p>{content[currentInTextQuestion].question}</p>
+                {!showInTextSolution && (
+                  <button onClick={() => setShowInTextSolution(true)}>View Solution</button>
+                )}
+                {showInTextSolution && (
+                  <div>
+                    <p><strong>Answer:</strong> {content[currentInTextQuestion].options?.[content[currentInTextQuestion].answer]}</p>
+                    {content[currentInTextQuestion].reason && <p><strong>Explanation:</strong> {content[currentInTextQuestion].reason}</p>}
+                  </div>
+                )}
+                <div className="nav-buttons">
+                  {currentInTextQuestion > 0 && (
+                    <button onClick={() => {
+                      setCurrentInTextQuestion(currentInTextQuestion - 1);
+                      setShowInTextSolution(false);
+                    }}>Previous</button>
+                  )}
+                  {currentInTextQuestion < content.length - 1 && (
+                    <button onClick={() => {
+                      setCurrentInTextQuestion(currentInTextQuestion + 1);
+                      setShowInTextSolution(false);
+                    }}>Next</button>
+                  )}
+                </div>
               </div>
-            ))}
+            ) : (
+              <p>No solutions available.</p>
+            )}
           </div>
         </div>
       )}
@@ -329,10 +364,16 @@ const ChapterView = () => {
           <div className="lock-card">
             <h3>Unlock Full Test</h3>
             <p>Subscribe for Rs 99 to access all questions and results.</p>
-            <button className="subscribe-btn" onClick={() => {
-              localStorage.setItem("paid", "true");
-              setLocked(false);
-              alert("Payment successful!");
+            <button className="subscribe-btn" onClick={async () => {
+              try {
+                await api.put("/auth/payment", { payment: true });
+                localStorage.setItem("hasPaid", "true");
+                setLocked(false);
+                alert("Payment successful!");
+              } catch (err) {
+                console.error("Payment failed:", err);
+                alert("Payment failed. Please try again.");
+              }
             }}>Subscribe - Rs 99</button>
           </div>
         </div>

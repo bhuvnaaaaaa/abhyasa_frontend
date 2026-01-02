@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
-import { setToken, setLastActive } from "../utils/auth";
+import { setToken, setLastActive, getToken } from "../utils/auth";
 import "../assets/css/UnifiedAuth.css";
 
 export default function Signup({ isModal = false, onSuccess }) {
@@ -25,6 +25,15 @@ export default function Signup({ isModal = false, onSuccess }) {
   const [popupType, setPopupType] = useState("success");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      // Already signed in, show alert
+      alert("You're already logged in");
+      navigate("/");
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -92,6 +101,7 @@ export default function Signup({ isModal = false, onSuccess }) {
 
       // Backend already auto-logs in, just handle the response
       setToken(response.data.token);
+      localStorage.setItem("hasPaid", response.data.payment.toString());
       setLastActive();
 
       showNotification("Registration successful! Welcome!", "success");
@@ -159,6 +169,7 @@ export default function Signup({ isModal = false, onSuccess }) {
                 password: formData.password
               });
               localStorage.setItem("token", res.data.token);
+              localStorage.setItem("hasPaid", res.data.payment.toString());
               setLastActive();
               showNotification("Logged in successfully!", "success");
               setTimeout(() => {

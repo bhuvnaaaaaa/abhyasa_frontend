@@ -5,61 +5,76 @@ import logoImg from "../assets/images/logo.jpg";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [step, setStep] = useState("subjects");
+  const [step, setStep] = useState("boards");
   const [selectedBoard, setSelectedBoard] = useState(null);
-  const [selectedSubjectName, setSelectedSubjectName] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState(null);
+  const [boards, setBoards] = useState([]);
   const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
+  const [, setSelectedSubjectName] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const boardsRes = await api.get("/boards");
-        const board = boardsRes.data.find(b => b.name === 'ICSE');
-        if (board) {
-          setSelectedBoard(board);
-          const subjectsRes = await api.get("/subjects", { params: { board: board._id, grade: 6 } });
-          setSubjects(subjectsRes.data || []);
-        // Hardcode ICSE grades for simplicity
-        setGrades(
-          [
-            { grade: 6, _id: '6' },
-            { grade: 7, _id: '7' },
-            { grade: 8, _id: '8' },
-            { grade: 9, _id: '9' },
-            { grade: 10, _id: '10' }
-          ]
-        );
-        }
+        setBoards(boardsRes.data || []);
+        // Hardcode grades for simplicity
+        setGrades([
+          { grade: 6, _id: '6' },
+          { grade: 7, _id: '7' },
+          { grade: 8, _id: '8' },
+          { grade: 9, _id: '9' },
+          { grade: 10, _id: '10' }
+        ]);
       } catch (err) {
-        console.error("Failed to fetch board and subjects", err);
-        setSubjects([]);
+        console.error("Failed to fetch boards", err);
+        setBoards([]);
         setGrades([]);
       }
     };
     loadData();
   }, []);
 
-  const chooseSubject = (subject) => {
-    const subjectName = typeof subject === 'string' ? subject : subject.name;
-    setSelectedSubjectName(subjectName);
+  useEffect(() => {
+    if (step === "subjects" && selectedBoard && selectedGrade) {
+      const fetchSubjects = async () => {
+        try {
+          const subjectsRes = await api.get("/subjects", { params: { board: selectedBoard._id, grade: selectedGrade._id } });
+          setSubjects(subjectsRes.data || []);
+        } catch (err) {
+          console.error("Failed to fetch subjects", err);
+          setSubjects([]);
+        }
+      };
+      fetchSubjects();
+    }
+  }, [step, selectedBoard, selectedGrade]);
+
+  const chooseBoard = (board) => {
+    setSelectedBoard(board);
     setStep("grades");
   };
 
-  const chooseGrade = async (grade) => {
-    try {
-      const subjectsRes = await api.get("/subjects", { params: { board: selectedBoard._id, grade: grade._id } });
-      const s = subjectsRes.data.find(subj => subj.name === selectedSubjectName);
-      if (s) {
-        const res = await api.get(`/subjects/${s._id}/chapters`);
+  const chooseGrade = (grade) => {
+    setSelectedGrade(grade);
+    setStep("subjects");
+  };
+
+  const chooseSubject = (subject) => {
+    setSelectedSubjectName(subject.name);
+    setStep("chapters");
+    // fetch chapters
+    const fetchChapters = async () => {
+      try {
+        const res = await api.get(`/subjects/${subject._id}/chapters`);
         setChapters(res.data || []);
+      } catch (err) {
+        console.error("Failed to load chapters", err);
+        setChapters([]);
       }
-      setStep("chapters");
-    } catch (err) {
-      console.error("Failed to load chapters", err);
-      setChapters([]);
-    }
+    };
+    fetchChapters();
   };
 
   const goToChapter = (ch) => {
@@ -78,10 +93,13 @@ export default function Dashboard() {
 
   const goBack = () => {
     if (step === "grades") {
-      setStep("subjects");
-      setSelectedSubjectName("");
-    } else if (step === "chapters") {
+      setStep("boards");
+      setSelectedBoard(null);
+    } else if (step === "subjects") {
       setStep("grades");
+      setSelectedGrade(null);
+    } else if (step === "chapters") {
+      setStep("subjects");
       setChapters([]);
     }
   };
@@ -100,7 +118,9 @@ export default function Dashboard() {
     }
   })();
 
-  const uniqueSubjectNames = [...new Set(subjects.map(s => s.name))];
+  const uniqueSubjects = subjects.filter((subject, index, self) =>
+    index === self.findIndex(s => s.name === subject.name)
+  );
 
   return (
     <div className="dashboard-container">
@@ -112,7 +132,7 @@ export default function Dashboard() {
 
       {/* Control Buttons */}
       <div className="dashboard-controls">
-        {step !== "subjects" && (
+        {step !== "boards" && (
           <button onClick={goBack} className="dashboard-back-btn">
             <span className="btn-icon">←</span>
             <span>Back</span>
@@ -132,18 +152,37 @@ export default function Dashboard() {
 
       {/* Content Container */}
       <div className="dashboard-content">
+        {step === "boards" && (
+          <div className="dashboard-section">
+            <h2 className="dashboard-title">Select Your Board</h2>
+            <div className="dashboard-list dashboard-horizontal-list">
+              {boards.map((board) => (
+                <article
+                  key={board._id}
+                  className="dashboard-card board-card"
+                  onClick={() => chooseBoard(board)}
+                >
+                  <div className="card-content">
+                    <h3>{board.name}</h3>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
         {step === "subjects" && (
           <div className="dashboard-section">
             <h2 className="dashboard-title">Select Your Subject</h2>
             <div className="dashboard-list">
-              {uniqueSubjectNames.map((subjName) => (
+              {uniqueSubjects.map((subject) => (
                 <article
-                  key={subjName}
+                  key={subject._id}
                   className="dashboard-card subject-card"
-                  onClick={() => chooseSubject(subjName)}
+                  onClick={() => chooseSubject(subject)}
                 >
                   <div className="card-content">
-                    <h3>{subjName} Study Material</h3>
+                    <h3>{subject.name} Study Material</h3>
                   </div>
                 </article>
               ))}
@@ -174,18 +213,20 @@ export default function Dashboard() {
           <div className="dashboard-section">
             <h2 className="dashboard-title">Select a Chapter</h2>
             <div className="dashboard-list">
-              {chapters.map((c) => (
-                <article
-                  key={c._id}
-                  className="dashboard-card chapter-card"
-                  onClick={() => goToChapter(c)}
-                >
-                  <div className="card-content">
-                    <p className="chapter-number">Chapter {c.number || c._id}</p>
-                    <h3 className="chapter-title">{c.title || c.name || `Chapter ${c.number}`}</h3>
-                  </div>
-                </article>
-              ))}
+              {chapters
+                .sort((a, b) => (a.number || 0) - (b.number || 0))
+                .map((c) => (
+                  <article
+                    key={c._id}
+                    className="dashboard-card chapter-card"
+                    onClick={() => goToChapter(c)}
+                  >
+                    <div className="card-content">
+                      <p className="chapter-number">Chapter {c.number || c._id}</p>
+                      <h3 className="chapter-title">{c.title || c.name || `Chapter ${c.number}`}</h3>
+                    </div>
+                  </article>
+                ))}
             </div>
           </div>
         )}

@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import { getToken } from "../utils/auth";
 
 export default function Login() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      // Already signed in, show alert
+      alert("You're already logged in");
+      navigate("/");
+    }
+  }, [navigate]);
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -58,6 +68,7 @@ export default function Login() {
       });
 
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("hasPaid", res.data.payment.toString());
       const { setLastActive } = await import("../utils/auth");
       setLastActive();
 

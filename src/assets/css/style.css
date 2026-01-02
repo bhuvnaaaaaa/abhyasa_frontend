@@ -1372,6 +1372,18 @@ footer .social-links a {
   color: #2c5282;
 }
 
+.grade-card.dashboard-card,
+.subject-card.dashboard-card,
+.chapter-card.dashboard-card {
+  padding: 20px 15px;
+}
+
+.grade-card .card-content h3,
+.subject-card .card-content h3,
+.chapter-card .card-content h3 {
+  font-size: 1.4rem;
+}
+
 /* Chapter card specific styles */
 .chapter-card .card-content {
   text-align: left;
@@ -1403,6 +1415,14 @@ footer .social-links a {
   gap: 20px;
   max-width: 800px;
   width: 100%;
+}
+
+.dashboard-horizontal-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  max-width: none;
 }
 
 /* Specific styles for chapters */
