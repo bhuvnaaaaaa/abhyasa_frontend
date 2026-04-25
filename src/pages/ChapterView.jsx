@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import api from "../api/axios";
 import "../assets/css/ChapterView.css";
 import Signup from "./Signup";
 
 const ChapterView = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const inTextRef = useRef(null);
 
   const [chapter, setChapter] = useState(null);
@@ -14,14 +17,19 @@ const ChapterView = () => {
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
-  const [, setScrollCount] = useState(0);
+  const [inTextNextClicks, setInTextNextClicks] = useState(0);
+  const [inTextAccessBlocked, setInTextAccessBlocked] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authReturnSection, setAuthReturnSection] = useState("in-text");
 
   const hasPaid = localStorage.getItem("hasPaid") === "true"; // payment status from backend
 
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
+    setInTextAccessBlocked(false);
+    setInTextNextClicks(0);
     setShowAuthModal(false);
+    setActiveSection(authReturnSection);
   };
 
   // Check if user is admin
@@ -61,6 +69,8 @@ const ChapterView = () => {
         // Reset states for demo
         setCurrentInTextQuestion(0);
         setShowInTextSolution(false);
+        setInTextNextClicks(0);
+        setInTextAccessBlocked(false);
         setCurrentQuestion(0);
         setAnswers([]);
         setShowResults(false);
@@ -87,33 +97,20 @@ const ChapterView = () => {
       fetchAllChapters();
     }
   }, [chapter]);
-
-
-
-  useEffect(() => {
-    if (activeSection === "in-text" && !isAuthenticated && !showAuthModal) {
-      const element = inTextRef.current;
-      if (element) {
-        const handleScroll = () => {
-          setScrollCount(prev => {
-            const newCount = prev + 1;
-            if (newCount >= 2) {
-              setShowAuthModal(true);
-            }
-            return newCount;
-          });
-        };
-        element.addEventListener("scroll", handleScroll, { passive: true });
-        return () => element.removeEventListener("scroll", handleScroll);
-      }
-    }
-  }, [activeSection, isAuthenticated, showAuthModal]);
+  const isAuthRequiredForContent = !isAuthenticated && inTextAccessBlocked;
 
   if (loading) return <p className="p-4">Loading...</p>;
   if (!chapter) return <p className="p-4">Chapter not found.</p>;
 
-  const content = (chapter.content && chapter.content.length && chapter.content) || [];
-  const numCorrect = content.map((q, index) => answers[index] === q.answer ? 1 : 0).reduce((a, b) => a + b, 0);
+  // Handle both full content and restricted preview payloads.
+  // Backend returns `content` for authorized users and `contentPreview` for guests.
+  let questionsContent = [];
+  if (Array.isArray(chapter.content)) {
+    questionsContent = chapter.content;
+  } else if (Array.isArray(chapter.contentPreview)) {
+    questionsContent = chapter.contentPreview;
+  }
+  const numCorrect = questionsContent.map((q, index) => answers[index] === q.answer ? 1 : 0).reduce((a, b) => a + b, 0);
 
   return (
     <div className="chapter-page">
@@ -127,7 +124,7 @@ const ChapterView = () => {
             <div key={ch._id} className={`chapter-item-sidebar ${ch._id === id ? 'current' : ''}`}>
               <div
                 className="chapter-link"
-                onClick={() => window.location.href = `/chapter/${ch._id}`}
+                onClick={() => navigate(`/chapter/${ch._id}`)}
               >
                 {ch.number}. {ch.title}
               </div>
@@ -140,14 +137,12 @@ const ChapterView = () => {
       <div className="chapter-main">
         <h1 className="chapter-heading">{chapter.name || chapter.title}</h1>
 
-        {/* Section Links */}
+      {/* Section Links */}
         <div className="section-links">
           <button
             className={`section-link-btn ${activeSection === "in-text" ? "active" : ""}`}
             onClick={() => {
               setActiveSection("in-text");
-              setScrollCount(0);
-              setShowAuthModal(false);
             }}
           >
             In-Text Solutions
@@ -156,15 +151,27 @@ const ChapterView = () => {
             className={`section-link-btn ${activeSection === "test-yourself" ? "active" : ""}`}
             onClick={() => {
               setActiveSection("test-yourself");
-              setShowAuthModal(false);
             }}
           >
-            Test Yourself (MCQs)
+            {hasPaid ? 'Test Yourself (MCQs)' : 'Test Yourself (MCQs)'}
           </button>
         </div>
 
       {/* Content */}
-      {activeSection === "in-text" && (
+      {isAuthRequiredForContent ? (
+        <div className="section-content">
+          <h2 className="section-title">Login Required</h2>
+          <p style={{ marginBottom: 16 }}>
+            Please sign up or log in to continue viewing chapter content.
+          </p>
+          <button className="view-solution-btn" onClick={() => {
+            setAuthReturnSection("in-text");
+            setShowAuthModal(true);
+          }}>
+            Continue with Login / Signup
+          </button>
+        </div>
+      ) : activeSection === "in-text" && (
         <div className="section-content" ref={inTextRef}>
           <h2 className="section-title">In-Text Solutions</h2>
           {chapter.videoUrl && (
@@ -179,32 +186,106 @@ const ChapterView = () => {
               />
             </div>
           )}
-          <div className="in-text-solutions">
-            {content.length > 0 ? (
+          
+          {/* Chapter Content Markdown Render */}
+          {chapter.content && typeof chapter.content === 'string' && (
+            <div className="chapter-content-markdown" style={{ marginBottom: 30, padding: 20, background: '#fff', borderRadius: 8 }}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  table: ({...props}) => <table style={{ borderCollapse: 'collapse', width: '100%', margin: '16px 0' }} {...props} />,
+                  th: ({...props}) => <th style={{ border: '1px solid #ddd', padding: '8px 12px', backgroundColor: '#f5f5f5', fontWeight: 600 }} {...props} />,
+                  td: ({...props}) => <td style={{ border: '1px solid #ddd', padding: '8px 12px' }} {...props} />,
+                  h1: ({...props}) => <h1 style={{ fontSize: '1.8rem', margin: '20px 0 10px', color: '#2c3e50' }} {...props} />,
+                  h2: ({...props}) => <h2 style={{ fontSize: '1.4rem', margin: '16px 0 8px', color: '#34495e' }} {...props} />,
+                  h3: ({...props}) => <h3 style={{ fontSize: '1.2rem', margin: '14px 0 6px' }} {...props} />,
+                  code: ({...props}) => <code style={{ backgroundColor: '#f8f9fa', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }} {...props} />,
+                  pre: ({...props}) => <pre style={{ backgroundColor: '#f8f9fa', padding: 12, borderRadius: 6, overflowX: 'auto' }} {...props} />
+                }}
+              >
+                {chapter.content}
+              </ReactMarkdown>
+            </div>
+          )}
+
+              <div className="in-text-solutions">
+            {questionsContent.length > 0 ? (
               <div className="question-block">
-                <p>Question {currentInTextQuestion + 1}</p>
-                <p>{content[currentInTextQuestion].question}</p>
+                <div className="question-header">
+                  <p className="question-number">Question {currentInTextQuestion + 1} of {questionsContent.length}</p>
+                  <div className="question-progress">
+                    <div 
+                      className="progress-bar" 
+                      style={{ width: `${((currentInTextQuestion + 1) / questionsContent.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <p className="question-text">{questionsContent[currentInTextQuestion].question}</p>
+                
                 {!showInTextSolution && (
-                  <button onClick={() => setShowInTextSolution(true)}>View Solution</button>
+                  <button className="view-solution-btn" onClick={() => setShowInTextSolution(true)}>
+                    View Solution
+                  </button>
                 )}
+                
                 {showInTextSolution && (
-                  <div>
-                    <p><strong>Answer:</strong> {content[currentInTextQuestion].options?.[content[currentInTextQuestion].answer]}</p>
-                    {content[currentInTextQuestion].reason && <p><strong>Explanation:</strong> {content[currentInTextQuestion].reason}</p>}
+                  <div className="solution-block">
+                    <div className="answer-block">
+                      <p><strong className="answer-label">Answer:</strong></p>
+                      <p className="answer-text">{questionsContent[currentInTextQuestion].options?.[questionsContent[currentInTextQuestion].answer]}</p>
+                    </div>
+                    
+                    {questionsContent[currentInTextQuestion].reason && (
+                      <div className="explanation-block">
+                        <p><strong className="explanation-label">Explanation:</strong></p>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({...props}) => <table style={{ borderCollapse: 'collapse', width: '100%', margin: '12px 0' }} {...props} />,
+                            th: ({...props}) => <th style={{ border: '1px solid #ddd', padding: '8px 12px', backgroundColor: '#f0f4f8', fontWeight: 600 }} {...props} />,
+                            td: ({...props}) => <td style={{ border: '1px solid #ddd', padding: '8px 12px' }} {...props} />,
+                            p: ({...props}) => <p style={{ margin: '8px 0' }} {...props} />
+                          }}
+                        >
+                          {questionsContent[currentInTextQuestion].reason}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 )}
-                <div className="nav-buttons">
+                
+                <div className={`navigation-buttons ${currentInTextQuestion === 0 ? "align-right" : ""}`}>
                   {currentInTextQuestion > 0 && (
-                    <button onClick={() => {
-                      setCurrentInTextQuestion(currentInTextQuestion - 1);
-                      setShowInTextSolution(false);
-                    }}>Previous</button>
+                    <button 
+                      className="nav-btn prev-btn"
+                      onClick={() => {
+                        setCurrentInTextQuestion(currentInTextQuestion - 1);
+                        setShowInTextSolution(false);
+                      }}
+                    >
+                      ← Previous
+                    </button>
                   )}
-                  {currentInTextQuestion < content.length - 1 && (
-                    <button onClick={() => {
-                      setCurrentInTextQuestion(currentInTextQuestion + 1);
-                      setShowInTextSolution(false);
-                    }}>Next</button>
+                  {currentInTextQuestion < questionsContent.length - 1 && (
+                    <button 
+                      className="nav-btn next-btn"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          const nextClickCount = inTextNextClicks + 1;
+                          setInTextNextClicks(nextClickCount);
+                          if (nextClickCount >= 2) {
+                            setAuthReturnSection("in-text");
+                            setInTextAccessBlocked(true);
+                            setShowAuthModal(true);
+                            return;
+                          }
+                        }
+                        setCurrentInTextQuestion(currentInTextQuestion + 1);
+                        setShowInTextSolution(false);
+                      }}
+                    >
+                      Next →
+                    </button>
                   )}
                 </div>
               </div>
@@ -221,8 +302,8 @@ const ChapterView = () => {
           {showResults ? (
             <div className="results">
               <h2>Results</h2>
-              <p>You got {numCorrect} out of {content.length} correct.</p>
-              {content.map((q, index) => (
+              <p>You got {numCorrect} out of {questionsContent.length} correct.</p>
+              {questionsContent.map((q, index) => (
                 <div key={q._id || index} className="result-question">
                   <p><strong>Question {index + 1}:</strong> {q.question}</p>
                   <div className="answer-row">
@@ -240,12 +321,12 @@ const ChapterView = () => {
             </div>
           ) : (
             <div className="mcq-test">
-              {currentQuestion < content.length ? (
+              {currentQuestion < questionsContent.length ? (
                 <div className="question-block">
-                  <p>Question {currentQuestion + 1}</p>
-                  <p>{content[currentQuestion].question}</p>
+                <p>Question {currentQuestion + 1}</p>
+                <p>{questionsContent[currentQuestion].question}</p>
                   <div className="mcq-options">
-                    {content[currentQuestion].options?.map((op, i) => (
+                    {questionsContent[currentQuestion].options?.map((op, i) => (
                       <button
                         key={i}
                         className={`mcq-option ${answers[currentQuestion] === i ? 'selected' : ''}`}
@@ -267,14 +348,14 @@ const ChapterView = () => {
                       onClick={() => {
                         if (currentQuestion === 0 && !hasPaid) {
                           setLocked(true);
-                        } else if (currentQuestion < content.length - 1) {
+                        } else if (currentQuestion < questionsContent.length - 1) {
                           setCurrentQuestion(currentQuestion + 1);
                         } else {
                           setShowResults(true);
                         }
                       }}
                     >
-                      {currentQuestion < content.length - 1 ? 'Next' : 'Finish'}
+                      {currentQuestion < questionsContent.length - 1 ? 'Next' : 'Finish'}
                     </button>
                   </div>
                 </div>

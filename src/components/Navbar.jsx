@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
-import { getToken } from "../utils/auth";
+import { useAuth } from "../auth/AuthContext";
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, logout } = useAuth();
   const [classesOptions, setClassesOptions] = useState([]);
   const [showStudyMaterialDropdown, setShowStudyMaterialDropdown] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
 
   const handleHomeClick = () => {
     if (location.pathname === "/") {
@@ -112,7 +112,7 @@ function Navbar() {
           </div>
 
           <div className="nav-buttons">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
                 <button onClick={async () => {
                   try {
@@ -120,9 +120,8 @@ function Navbar() {
                   } catch (err) {
                     console.warn("Logout request failed", err);
                   }
-                  localStorage.removeItem("token");
                   localStorage.removeItem("hasPaid");
-                  setIsLoggedIn(false);
+                  logout();
                   navigate("/");
                 }}>Logout</button>
               </>

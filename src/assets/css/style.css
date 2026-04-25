@@ -1384,6 +1384,66 @@ footer .social-links a {
   font-size: 1.4rem;
 }
 
+/* Selection Grid Styles */
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.selection-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.selection-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 123, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.selection-card:hover::before {
+  left: 100%;
+}
+
+.selection-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+.selection-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #083e3c;
+  text-align: center;
+}
+
+.selection-card p {
+  margin: 0;
+  font-size: 1rem;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+}
+
 /* Chapter card specific styles */
 .chapter-card .card-content {
   text-align: left;
@@ -1523,6 +1583,99 @@ footer .social-links a {
   box-shadow: 0 0 0 3px rgba(6, 190, 182, 0.1);
 }
 
+.dashboard-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Breadcrumb Navigation */
+.dashboard-breadcrumb {
+  position: fixed;
+  top: 80px;
+  left: 30px;
+  right: 30px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  border: 2px solid rgba(6, 190, 182, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.4s ease;
+  flex-wrap: wrap;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.breadcrumb-item {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.breadcrumb-item.active {
+  color: #06beb6;
+  font-weight: 700;
+}
+
+.breadcrumb-separator {
+  color: #d1d5db;
+  font-weight: 600;
+}
+
+/* Subtitle for step description */
+.dashboard-subtitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #083e3c;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Error and Loading States */
+.dashboard-error {
+  padding: 15px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  color: #dc2626;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: slideDown 0.3s ease;
+}
+
+.dashboard-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #083e3c;
+  font-size: 1.2rem;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-controls {
     top: 20px;
@@ -1589,5 +1742,387 @@ footer .social-links a {
 
   .chapter-title {
     font-size: 1.1rem;
+  }
+}
+
+/* UI refresh overrides */
+:root {
+  --ui-primary: #0f766e;
+  --ui-primary-dark: #115e59;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f8fffe;
+  --ui-text: #163b3b;
+  --ui-text-muted: #5f7373;
+  --ui-border: #d9ece9;
+  --ui-shadow: 0 10px 28px rgba(15, 80, 80, 0.1);
+}
+
+body {
+  background: linear-gradient(180deg, #f3fbfa 0%, #ecf8f7 100%);
+  color: var(--ui-text);
+}
+
+nav {
+  padding: 0.95rem 2.25rem;
+}
+
+.nav-links-main a,
+.dropdown-toggle,
+.nav-buttons button {
+  transition: all 0.25s ease;
+}
+
+.nav-buttons button {
+  border: 1px solid transparent;
+  font-size: 0.96rem;
+}
+
+#hero {
+  min-height: calc(100vh - 76px);
+  height: auto;
+}
+
+.hero-left {
+  background: linear-gradient(135deg, #0f766e 0%, #188f86 100%);
+  padding: clamp(2rem, 4vw, 4rem);
+}
+
+.hero-left h1 {
+  margin-top: 0;
+  line-height: 1.12;
+  font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+}
+
+.hero-left h2 {
+  margin-bottom: 2.5rem;
+  font-size: clamp(1.05rem, 2.3vw, 1.5rem);
+}
+
+#about {
+  background: linear-gradient(180deg, #0d6f68 0%, #146f6a 100%);
+  padding: clamp(3rem, 5vw, 5rem) clamp(1.2rem, 4vw, 4rem);
+}
+
+#about h2 {
+  color: #ecfffb;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+#about p {
+  font-size: clamp(1rem, 1.4vw, 1.1rem);
+  line-height: 1.75;
+}
+
+.dashboard-content {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 110px 24px 52px;
+}
+
+.dashboard-title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  margin-bottom: 1.5rem;
+}
+
+.selection-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.selection-card,
+.dashboard-card {
+  border-radius: 14px;
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--ui-shadow);
+  padding: 1.15rem 1.1rem;
+  min-height: 132px;
+}
+
+.selection-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.selection-card p {
+  font-size: 0.93rem;
+  color: var(--ui-text-muted);
+}
+
+.selection-card:hover,
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  border-color: #b9e2dc;
+}
+
+/* Professional contact section */
+.contact-section {
+  background: linear-gradient(180deg, #0c3f3c 0%, #112f35 100%);
+  color: #e9fbf8;
+  padding: 3.2rem 1.2rem 1.4rem;
+}
+
+.contact-shell {
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.contact-top {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.1fr) 1.6fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.contact-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: #9de3da;
+  margin-bottom: 0.4rem;
+}
+
+.contact-brand h2 {
+  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  line-height: 1.2;
+  margin-bottom: 0.65rem;
+}
+
+.contact-description {
+  color: #cde8e4;
+  line-height: 1.7;
+  font-size: 0.98rem;
+  max-width: 540px;
+  margin-bottom: 1rem;
+}
+
+.contact-right {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(260px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.contact-form-card {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(190, 235, 226, 0.35);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.contact-form-card h3 {
+  margin-bottom: 0.8rem;
+  font-size: 1.05rem;
+}
+
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+
+.contact-form-grid input,
+.contact-form-grid textarea {
+  width: 100%;
+  border: 1px solid rgba(179, 222, 214, 0.55);
+  background: rgba(255, 255, 255, 0.94);
+  color: #1f3f3d;
+  border-radius: 10px;
+  padding: 0.72rem 0.78rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-form-grid input::placeholder,
+.contact-form-grid textarea::placeholder {
+  color: #6d807f;
+}
+
+.contact-form-grid input:focus,
+.contact-form-grid textarea:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2);
+}
+
+.contact-form-grid textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.contact-form-card button {
+  margin-top: 0.8rem;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 0.72rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  background: #0f766e;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.contact-form-card button:hover {
+  background: #115e59;
+  transform: translateY(-1px);
+}
+
+.contact-status {
+  margin-top: 0.6rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.contact-status.success {
+  color: #9ff7d5;
+}
+
+.contact-status.error {
+  color: #ffc7c7;
+}
+
+.contact-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+
+.contact-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(160, 225, 217, 0.25);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 1rem;
+  text-align: left;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.contact-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(194, 245, 235, 0.55);
+}
+
+.contact-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+  color: #dcfffa;
+}
+
+.contact-card a,
+.contact-card address,
+.contact-hours {
+  display: block;
+  color: #cbe7e3;
+  text-decoration: none;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  font-style: normal;
+}
+
+.contact-card address {
+  word-break: break-word;
+}
+
+.contact-card a {
+  word-break: break-word;
+}
+
+.contact-card a:hover {
+  color: #ffffff;
+}
+
+.contact-hours {
+  margin-top: 0.5rem;
+  color: #a8d4ce;
+  font-size: 0.85rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.social-links a {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 240, 232, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.social-links a:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.contact-bottom {
+  margin-top: 1.25rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(169, 225, 216, 0.25);
+}
+
+/* Homepage heading color standard */
+#hero h1,
+#hero h2,
+#about h2,
+.contact-brand h2,
+.contact-form-card h3,
+.contact-card h3 {
+  color: #333 !important;
+}
+
+.footer-copy {
+  color: #b3d7d2;
+  font-size: 0.87rem;
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .contact-top {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-right {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  nav {
+    padding: 0.8rem 1rem;
+  }
+
+  .hero-left {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .selection-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .selection-card,
+  .dashboard-card {
+    min-height: 110px;
+    padding: 1rem;
+  }
+
+  .contact-section {
+    padding: 2.2rem 0.9rem 1.2rem;
+  }
+
+  .contact-cards {
+    grid-template-columns: 1fr;
   }
 }

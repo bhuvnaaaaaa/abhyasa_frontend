@@ -1,113 +1,110 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import logoImg from "../assets/images/logo.jpg";
 
 export default function StudyMaterial() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [step, setStep] = useState("classes");
-  const [classesOptions, setClassesOptions] = useState([]);
+  const [step, setStep] = useState("boards");
+  const [boards, setBoards] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [, setSelectedSubject] = useState(null);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const chooseClass = async (classValue) => {
-    setSelectedClass(classValue);
-    setStep("subjects");
-    const [boardId, gradeId] = classValue.split('-');
+  // Subject display order
+  const subjectOrder = ["Physics", "Chemistry", "Biology", "Mathematics", "Geography", "History", "Civics", "Economics", "English"];
+
+  // Load boards on component mount
+  useEffect(() => {
+    const loadBoards = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const boardsRes = await api.get("/boards");
+        setBoards(boardsRes.data || []);
+      } catch (err) {
+        console.error("Failed to fetch boards", err);
+        setErrorMessage("Could not load boards right now. Please refresh and try again.");
+        setBoards([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadBoards();
+  }, []);
+
+  const chooseBoard = async (board) => {
+    setSelectedBoard(board);
+    setSelectedGrade(null);
+    setSelectedSubject(null);
+    setSubjects([]);
+    setChapters([]);
+    setStep("grades");
+    setIsLoading(true);
+    setErrorMessage("");
     try {
-      const subjectsRes = await api.get("/subjects", { params: { board: boardId, grade: gradeId } });
+      const gradesRes = await api.get("/grades", { params: { board: board._id } });
+      setGrades(gradesRes.data || []);
+    } catch (err) {
+      console.error("Failed to load grades", err);
+      setErrorMessage("Could not load classes for this board.");
+      setGrades([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const chooseGrade = async (grade) => {
+    setSelectedGrade(grade);
+    setSelectedSubject(null);
+    setChapters([]);
+    setStep("subjects");
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const subjectsRes = await api.get("/subjects", {
+        params: { board: selectedBoard?._id, grade: grade.grade },
+      });
       setSubjects(subjectsRes.data || []);
     } catch (err) {
       console.error("Failed to load subjects", err);
+      setErrorMessage("Could not load subjects for this class.");
       setSubjects([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    const loadClasses = async () => {
-      try {
-        const boardsRes = await api.get("/boards");
-        const gradesRes = await api.get("/grades");
-        const boards = boardsRes.data || [];
-        const grades = gradesRes.data || [];
-        const options = [];
-        boards.forEach(board => {
-          grades.filter(g => g.board === board._id).forEach(grade => {
-            options.push({
-              label: `${board.name} Class ${grade.grade}`,
-              boardId: board._id,
-              gradeId: grade._id,
-              value: `${board._id}-${grade._id}`
-            });
-          });
-        });
-        setClassesOptions(options);
-
-        const urlParams = new URLSearchParams(location.search);
-        const classParam = urlParams.get('class');
-        if (classParam) {
-          chooseClass(classParam);
-        }
-      } catch (err) {
-        console.error("Failed to fetch boards or grades", err);
-        setClassesOptions([]);
-      }
-    };
-    loadClasses();
-  }, [location.search]);
-
-  const chooseSubject = async (s) => {
-    setSelectedSubject(s);
+  const chooseSubject = async (subject) => {
+    setSelectedSubject(subject);
     setStep("chapters");
+    setIsLoading(true);
+    setErrorMessage("");
     try {
-      const res = await api.get(`/subjects/${s._id}/chapters`);
-      setChapters(res.data || []);
+      const chaptersRes = await api.get(`/subjects/${subject._id}/chapters`);
+      setChapters(chaptersRes.data || []);
     } catch (err) {
       console.error("Failed to load chapters", err);
+      setErrorMessage("Could not load chapters for this subject.");
       setChapters([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Check if user is admin
-  const isAdmin = (() => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return false;
-      const parts = token.split('.');
-      if (parts.length < 2) return false;
-      const payload = JSON.parse(atob(parts[1]));
-      return payload.role === 'admin';
-    } catch {
-      return false;
-    }
-  })();
-
-  const goToChapter = (ch) => {
-    navigate(`/chapter/${ch._id}`);
+  const goToChapter = (chapter) => {
+    navigate(`/chapter/${chapter._id}`);
   };
 
-  const logout = async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch (err) {
-      console.warn("Logout request failed", err);
-    }
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
-  const goBack = () => {
-    if (step === "subjects") {
-      setStep("classes");
-      setSelectedClass("");
-    } else if (step === "chapters") {
-      setStep("subjects");
-      setSelectedSubject(null);
-    }
-  };
+  const orderedSubjects = subjects
+    .filter(subject => subjectOrder.includes(subject.name))
+    .sort((a, b) => subjectOrder.indexOf(a.name) - subjectOrder.indexOf(b.name));
 
   return (
     <div className="dashboard-container">
@@ -117,77 +114,94 @@ export default function StudyMaterial() {
         <div className="dashboard-overlay"></div>
       </div>
 
-      {/* Control Buttons */}
-      <div className="dashboard-controls">
-        {step !== "classes" && (
-          <button onClick={goBack} className="dashboard-back-btn">
-            <span className="btn-icon">←</span>
-            <span>Back</span>
-          </button>
-        )}
-        {isAdmin && (
-          <button onClick={() => navigate("/admin")} className="dashboard-back-btn">
-            <span>Admin Panel</span>
-            <span className="btn-icon">⚙</span>
-          </button>
-        )}
-        <button onClick={logout} className="dashboard-logout-btn">
-          <span>Logout</span>
-          <span className="btn-icon">⏻</span>
-        </button>
-      </div>
-
       {/* Content Container */}
       <div className="dashboard-content">
-        {step === "classes" && (
+        {isLoading && <p className="p-4">Loading content...</p>}
+        {!isLoading && errorMessage && <p className="p-4">{errorMessage}</p>}
+
+        {step === "boards" && (
           <div className="dashboard-section">
-            <h2 className="dashboard-title">Select Your Class</h2>
-            <select
-              value={selectedClass}
-              onChange={(e) => chooseClass(e.target.value)}
-              className="dashboard-select"
-            >
-              <option value="">Choose a class</option>
-              {classesOptions.map((cls) => (
-                <option key={cls.value} value={cls.value}>
-                  {cls.label}
-                </option>
+            <h2 className="dashboard-title">Select Your Board</h2>
+            <div className="selection-grid">
+              {boards.map((board) => (
+                <div
+                  key={board._id}
+                  className="selection-card board-selection"
+                  onClick={() => chooseBoard(board)}
+                >
+                  <h3>{board.name}</h3>
+                  <p>Choose your educational board</p>
+                </div>
               ))}
-            </select>
+            </div>
+            {!isLoading && !errorMessage && boards.length === 0 && (
+              <p className="p-4">No boards available at the moment.</p>
+            )}
           </div>
         )}
 
-        {step === "subjects" && (
+        {step === "grades" && selectedBoard && (
           <div className="dashboard-section">
-            <h2 className="dashboard-title">Select Your Subject</h2>
-            <select
-              onChange={(e) => chooseSubject(subjects.find(s => s._id === e.target.value))}
-              className="dashboard-select"
-            >
-              <option value="">Choose a subject</option>
-              {subjects.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name}
-                </option>
+            <h2 className="dashboard-title">Select Grade - {selectedBoard.name}</h2>
+            <div className="selection-grid">
+              {grades.map((grade) => (
+                <div
+                  key={grade._id}
+                  className="selection-card grade-selection"
+                  onClick={() => chooseGrade(grade)}
+                >
+                  <h3>Class {grade.grade}</h3>
+                  <p>Grade {grade.grade} curriculum</p>
+                </div>
               ))}
-            </select>
+            </div>
+            {!isLoading && !errorMessage && grades.length === 0 && (
+              <p className="p-4">No classes found for this board.</p>
+            )}
           </div>
         )}
 
-        {step === "chapters" && (
+        {step === "subjects" && selectedGrade && (
           <div className="dashboard-section">
-            <h2 className="dashboard-title">Select a Chapter</h2>
-            <select
-              onChange={(e) => goToChapter(chapters.find(c => c._id === e.target.value))}
-              className="dashboard-select"
-            >
-              <option value="">Choose a chapter</option>
-              {chapters.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {`Chapter ${c.number}`}
-                </option>
+            <h2 className="dashboard-title">Select Subject - {selectedBoard.name} Class {selectedGrade.grade}</h2>
+            <div className="selection-grid">
+              {orderedSubjects.map((subject) => (
+                <div
+                  key={subject._id}
+                  className="selection-card subject-selection"
+                  onClick={() => chooseSubject(subject)}
+                >
+                  <h3>{subject.name}</h3>
+                  <p>{subject.description || `${subject.name} curriculum`}</p>
+                </div>
               ))}
-            </select>
+            </div>
+            {!isLoading && !errorMessage && orderedSubjects.length === 0 && (
+              <p className="p-4">No subjects available for this class yet.</p>
+            )}
+          </div>
+        )}
+
+        {step === "chapters" && selectedSubject && (
+          <div className="dashboard-section">
+            <h2 className="dashboard-title">Select Chapter - {selectedSubject.name}</h2>
+            <div className="selection-grid">
+              {chapters
+                .sort((a, b) => (a.number || 0) - (b.number || 0))
+                .map((chapter) => (
+                  <div
+                    key={chapter._id}
+                    className="selection-card chapter-selection"
+                    onClick={() => goToChapter(chapter)}
+                  >
+                    <h3>Chapter {chapter.number}</h3>
+                    <p>{chapter.title || chapter.name || `Chapter ${chapter.number || ""}`}</p>
+                  </div>
+                ))}
+            </div>
+            {!isLoading && !errorMessage && chapters.length === 0 && (
+              <p className="p-4">No chapters available for this subject.</p>
+            )}
           </div>
         )}
       </div>

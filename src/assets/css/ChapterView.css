@@ -838,6 +838,17 @@ html, body {
   margin-top: 20px;
 }
 
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.navigation-buttons.align-right {
+  justify-content: flex-end;
+}
+
 .in-text-solutions .nav-buttons button {
   padding: 10px 20px;
   border: 1px solid #0f7a6f;
@@ -857,6 +868,10 @@ html, body {
 .in-text-solutions .nav-buttons button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.navigation-buttons .nav-btn {
+  margin-bottom: 0;
 }
 
 /* TEST RESULTS */

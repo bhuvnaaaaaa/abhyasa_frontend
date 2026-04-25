@@ -10,6 +10,13 @@ export default function Home() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [allContent, setAllContent] = useState([]);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [contactStatus, setContactStatus] = useState({ type: "", message: "" });
   const searchRef = useRef(null);
 
   const navigate = useNavigate();
@@ -85,6 +92,35 @@ export default function Home() {
     setShowSearchResults(false);
     setSearchQuery("");
     navigate(`/chapter/${chapter._id}`);
+  };
+
+  const handleContactInput = (e) => {
+    const { name, value } = e.target;
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
+      setContactStatus({
+        type: "error",
+        message: "Please fill in name, email, and message.",
+      });
+      return;
+    }
+
+    setContactStatus({
+      type: "success",
+      message: "Thanks! Your message has been recorded. Our team will contact you soon.",
+    });
+
+    setContactForm({
+      name: "",
+      email: "",
+      phone: "",
+      message: "",
+    });
   };
 
   return (
@@ -186,60 +222,104 @@ export default function Home() {
         <div className="about-right" aria-hidden="true"></div>
       </section>
 
-      {/* FOOTER */}
-      <footer id="contact">
-        <div className="social-links">
-          <a href="#">
-            <i className="fab fa-facebook-f"></i>
-          </a>
-          <a href="#">
-            <i className="fab fa-twitter"></i>
-          </a>
-          <a href="#">
-            <i className="fab fa-instagram"></i>
-          </a>
-          <a href="#">
-            <i className="fab fa-linkedin-in"></i>
-          </a>
+      {/* CONTACT */}
+      <footer id="contact" className="contact-section">
+        <div className="contact-shell">
+          <div className="contact-top">
+            <div className="contact-brand">
+              <p className="contact-eyebrow">Get in touch</p>
+              <h2>Talk to the Abhyasa team</h2>
+              <p className="contact-description">
+                We help students, parents, and schools with onboarding, study support,
+                and content guidance. Reach out and we will get back within one business day.
+              </p>
+              <div className="social-links">
+                <a href="#" aria-label="Facebook">
+                  <i className="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" aria-label="Twitter">
+                  <i className="fab fa-twitter"></i>
+                </a>
+                <a href="#" aria-label="Instagram">
+                  <i className="fab fa-instagram"></i>
+                </a>
+                <a href="#" aria-label="LinkedIn">
+                  <i className="fab fa-linkedin-in"></i>
+                </a>
+              </div>
+            </div>
+
+            <div className="contact-right">
+              <form className="contact-form-card" onSubmit={handleContactSubmit}>
+                <h3>Send us a message</h3>
+                <div className="contact-form-grid">
+                  <input
+                    type="text"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactInput}
+                    placeholder="Your name"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    value={contactForm.email}
+                    onChange={handleContactInput}
+                    placeholder="Email address"
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={contactForm.phone}
+                    onChange={handleContactInput}
+                    placeholder="Phone number (optional)"
+                  />
+                  <textarea
+                    name="message"
+                    value={contactForm.message}
+                    onChange={handleContactInput}
+                    placeholder="Tell us what you need help with"
+                    rows={4}
+                  />
+                </div>
+                <button type="submit">Submit Inquiry</button>
+                {contactStatus.message && (
+                  <p className={`contact-status ${contactStatus.type}`}>{contactStatus.message}</p>
+                )}
+              </form>
+
+              <div className="contact-cards">
+              <article className="contact-card">
+                <h3>Visit us</h3>
+                <address>
+                  244/147, 2nd Floor, Behind Kedar Clinic,
+                  <br />
+                  Fulbag Galli, Belagavi,
+                  <br />
+                  Karnataka - 590006
+                </address>
+              </article>
+
+              <article className="contact-card">
+                <h3>Email support</h3>
+                <a href="mailto:prashanthjagadeesh@gmail.com">prashanthjagadeesh@gmail.com</a>
+                <a href="mailto:bhuvanamallesh08@gmail.com">bhuvanamallesh08@gmail.com</a>
+              </article>
+
+              <article className="contact-card">
+                <h3>Call us</h3>
+                <a href="tel:+919916888184">+91 99168 88184</a>
+                <a href="tel:+916360594263">+91 63605 94263</a>
+                <p className="contact-hours">Mon - Sat, 9:00 AM to 7:00 PM</p>
+              </article>
+            </div>
+            </div>
+          </div>
+
+          <div className="contact-bottom">
+            <p className="footer-copy">&copy; 2025 Abhyasa. All rights reserved.</p>
+          </div>
         </div>
-
-        <br />
-
-        <div className="footer-contact-row">
-          <div className="footer-contact-address">
-            <h3>Contact Us</h3>
-
-            <address>
-              244/147, 2nd Floor, Behind Kedar Clinic, <br />
-              Fulbag Galli,
-              <br />
-              Belagavi, Karnataka - 590006
-            </address>
-          </div>
-
-          <div className="footer-contact-email">
-            <h3>Email</h3>
-            <a href="mailto:prashanthjagadeesh@gmail.com">
-              prashanthjagadeesh@gmail.com
-            </a>
-            <br />
-            <a href="mailto:bhuvanamallesh08@gmail.com">
-              bhuvanamallesh08@gmail.com
-            </a>
-          </div>
-
-          <div className="footer-contact-phone">
-            <h3>Phone</h3>
-            <a href="tel:+919916888184">+91 99168 88184</a>
-            <br />
-            <a href="tel:+916360594263">+91 63605 94263</a>
-            <br />
-          </div>
-        </div>
-
-        <p className="footer-copy">
-          <b>&copy; 2025 Abhyasa. All rights reserved.</b>
-        </p>
       </footer>
     </>
   );
