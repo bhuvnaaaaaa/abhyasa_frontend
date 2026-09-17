@@ -190,6 +190,7 @@ nav {
   padding: 5rem 4rem;
   background: teal;
   color: #fff;
+  background-color: teal !important;
 }
 
 #about h2 {
@@ -219,10 +220,11 @@ nav {
 
 /* FOOTER */
 footer {
-  background: rgb(28, 69, 69);
+  background: teal;
   color: #fff;
   padding: 1.5rem 3%;
   text-align: center;
+  background-color: teal !important;
 }
 
 footer .social-links {
@@ -1749,6 +1751,7 @@ footer .social-links a {
 :root {
   --ui-primary: #0f766e;
   --ui-primary-dark: #115e59;
+  --ui-page-bg: #e6f5f2;
   --ui-surface: #ffffff;
   --ui-surface-soft: #f8fffe;
   --ui-text: #163b3b;
@@ -1758,7 +1761,7 @@ footer .social-links a {
 }
 
 body {
-  background: linear-gradient(180deg, #f3fbfa 0%, #ecf8f7 100%);
+  background: var(--ui-page-bg);
   color: var(--ui-text);
 }
 
@@ -1783,7 +1786,7 @@ nav {
 }
 
 .hero-left {
-  background: linear-gradient(135deg, #0f766e 0%, #188f86 100%);
+  background: var(--ui-primary);
   padding: clamp(2rem, 4vw, 4rem);
 }
 
@@ -1799,7 +1802,7 @@ nav {
 }
 
 #about {
-  background: linear-gradient(180deg, #0d6f68 0%, #146f6a 100%);
+  background: var(--ui-primary);
   padding: clamp(3rem, 5vw, 5rem) clamp(1.2rem, 4vw, 4rem);
 }
 
@@ -1970,6 +1973,12 @@ nav {
   transform: translateY(-1px);
 }
 
+.contact-form-card button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .contact-status {
   margin-top: 0.6rem;
   font-size: 0.84rem;
@@ -2126,3 +2135,9 @@ nav {
     grid-template-columns: 1fr;
   }
 }
+  
+/* Contact Form Status Styles */  
+.contact-status { padding: 12px; margin-top: 15px; border-radius: 6px; font-weight: 500; text-align: center; }  
+.contact-status.success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }  
+.contact-status.error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }  
+.contact-status.loading { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; } 

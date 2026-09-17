@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import api from "../api/axios";
 import "../assets/css/ChapterView.css";
 import Signup from "./Signup";
+import SubscribeQR from "../components/SubscribeQR";
 
 const ChapterView = () => {
   const { id } = useParams();
@@ -150,6 +151,11 @@ const ChapterView = () => {
           <button
             className={`section-link-btn ${activeSection === "test-yourself" ? "active" : ""}`}
             onClick={() => {
+              if (!isAuthenticated) {
+                setAuthReturnSection("test-yourself");
+                setShowAuthModal(true);
+                return;
+              }
               setActiveSection("test-yourself");
             }}
           >
@@ -357,7 +363,7 @@ const ChapterView = () => {
                     )}
                     <button
                       onClick={() => {
-                        if (currentQuestion === 0 && !hasPaid) {
+                        if (currentQuestion >= 1 && !hasPaid && isAuthenticated) {
                           setLocked(true);
                         } else if (currentQuestion < questionsContent.length - 1) {
                           setCurrentQuestion(currentQuestion + 1);
@@ -456,17 +462,10 @@ const ChapterView = () => {
           <div className="lock-card">
             <h3>Unlock Full Test</h3>
             <p>Subscribe for Rs 99 to access all questions and results.</p>
-            <button className="subscribe-btn" onClick={async () => {
-              try {
-                await api.put("/auth/payment", { payment: true });
-                localStorage.setItem("hasPaid", "true");
-                setLocked(false);
-                alert("Payment successful!");
-              } catch (err) {
-                console.error("Payment failed:", err);
-                alert("Payment failed. Please try again.");
-              }
-            }}>Subscribe - Rs 99</button>
+            <SubscribeQR onSuccess={() => {
+              localStorage.setItem("hasPaid", "true");
+              setLocked(false);
+            }} />
           </div>
         </div>
       )}

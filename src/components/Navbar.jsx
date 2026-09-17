@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import api from "../api/axios";
 import { useAuth } from "../auth/AuthContext";
 
@@ -111,28 +112,41 @@ function Navbar() {
             </div>
           </div>
 
-          <div className="nav-buttons">
-            {isAuthenticated ? (
-              <>
-                <button onClick={async () => {
-                  try {
-                    await api.post("/auth/logout");
-                  } catch (err) {
-                    console.warn("Logout request failed", err);
-                  }
-                  localStorage.removeItem("hasPaid");
-                  logout();
-                  navigate("/");
-                }}>Logout</button>
-              </>
+           <div className="nav-buttons">
+             {isAuthenticated ? (
+               <>
+                 <motion.button 
+                   onClick={async () => {
+                    try {
+                      await api.post("/auth/logout");
+                    } catch (err) {
+                      console.warn("Logout request failed", err);
+                    }
+                    localStorage.removeItem("hasPaid");
+                    logout();
+                    navigate("/");
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                 >Logout</motion.button>
+               </>
             ) : (
               <>
-                <Link to="/login">
-                  <button>Login</button>
-                </Link>
-                <Link to="/signup">
-                  <button>Sign Up</button>
-                </Link>
+                 <Link to="/login">
+                   <motion.button 
+                     whileHover={{ scale: 1.02 }}
+                     whileTap={{ scale: 0.98 }}
+                     transition={{ duration: 0.15 }}
+                   >Login</motion.button>
+                 </Link>
+                 <Link to="/signup">
+                   <motion.button 
+                     whileHover={{ scale: 1.02 }}
+                     whileTap={{ scale: 0.98 }}
+                     transition={{ duration: 0.15 }}
+                   >Sign Up</motion.button>
+                 </Link>
               </>
             )}
           </div>

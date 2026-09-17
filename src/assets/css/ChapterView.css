@@ -565,9 +565,9 @@ html, body {
 
 /* RESPONSIVE */
 @media (max-width: 980px) {
-  .chapter-page { padding: 18px; }
-  .chapter-sidebar-left { float: none; width: 100%; margin-bottom: 12px; }
-  .chapter-main { margin-left: 0; width: 100%; }
+  .chapter-page { padding: 18px; display: flex; flex-direction: column; }
+  .chapter-sidebar-left { float: none; width: 100%; margin-bottom: 12px; position: relative; top: 0; height: auto; }
+  .chapter-main { margin-left: 0; width: 100%; padding: 18px; }
 
   .expanded-content {
     flex-direction: column;
@@ -599,6 +599,13 @@ html, body {
   .section-heading { font-size: 16px; }
   .chapter-page { padding: 12px; }
   .chapter-sidebar-left input { font-size: 13px; }
+  .chapter-main { padding: 12px; }
+  .section-links { flex-direction: column; gap: 8px; }
+  .section-link-btn { width: 100%; text-align: center; }
+  .answer-row { flex-direction: column; gap: 8px; }
+  .mcq-option { padding: 10px 12px; font-size: 14px; }
+  .navigation-buttons { flex-direction: column; }
+  .nav-btn { width: 100%; }
 
   .questions-grid {
     grid-template-columns: repeat(5, 1fr);

@@ -1,8 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion as Motion } from "framer-motion";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../assets/css/style.css";
 import api from "../api/axios";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  }
+};
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +122,7 @@ export default function Home() {
     setContactForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
 
     if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
@@ -110,32 +133,55 @@ export default function Home() {
       return;
     }
 
-    setContactStatus({
-      type: "success",
-      message: "Thanks! Your message has been recorded. Our team will contact you soon.",
-    });
+    setContactStatus({ type: "loading", message: "Sending your message..." });
 
-    setContactForm({
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
-    });
+    try {
+      const response = await api.post("/contact", contactForm);
+
+      if (response.data.success) {
+        setContactStatus({
+          type: "success",
+          message: "Thanks! Your message has been sent. Our team will contact you soon.",
+        });
+
+        setContactForm({
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+        });
+      } else {
+        setContactStatus({
+          type: "error",
+          message: response.data.error || "Failed to send message. Please try again later.",
+        });
+      }
+    } catch (err) {
+      setContactStatus({
+        type: "error",
+        message: err.response?.data?.error || "Failed to send message. Please try again later.",
+      });
+    }
   };
 
   return (
     <>
       {/* The site-wide `Navbar` is rendered from `App.jsx`. Removed local header to avoid duplicate navbars. */}
       {/* HERO SECTION */}
-      <section id="hero">
+      <Motion.section 
+        id="hero"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="hero-left">
-          <h1>Welcome to Abhyasa</h1>
-          <h2>
+          <Motion.h1 variants={itemVariants}>Welcome to Abhyasa</Motion.h1>
+          <Motion.h2 variants={itemVariants}>
             <i>Your journey to knowledge begins here.</i>
-          </h2>
+          </Motion.h2>
 
           {/* Search Bar */}
-          <div className="search-container" ref={searchRef}>
+          <Motion.div className="search-container" ref={searchRef} variants={itemVariants}>
             <div className="search-input-wrapper">
               <i className="fas fa-search search-icon"></i>
               <input
@@ -177,18 +223,16 @@ export default function Home() {
                 ) : null}
               </div>
             )}
-          </div>
-
-          <p className="hero-subtitle">Start your learning journey today!</p>
+          </Motion.div>
         </div>
 
-        <div className="hero-illustration">
+        <Motion.div className="hero-illustration" variants={itemVariants}>
           <img
             src="/src/assets/images/Adobe Express - file.png"
             alt="Education Illustration"
           />
-        </div>
-      </section>
+        </Motion.div>
+      </Motion.section>
 
       {/* ABOUT SECTION */}
       <section id="about">
@@ -282,7 +326,15 @@ export default function Home() {
                     rows={4}
                   />
                 </div>
-                <button type="submit">Submit Inquiry</button>
+                <Motion.button 
+                  type="submit" 
+                  disabled={contactStatus.type === "loading"}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {contactStatus.type === "loading" ? "Sending..." : "Submit Inquiry"}
+                </Motion.button>
                 {contactStatus.message && (
                   <p className={`contact-status ${contactStatus.type}`}>{contactStatus.message}</p>
                 )}
