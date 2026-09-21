@@ -2,8 +2,10 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import auth from "../utils/auth";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${BASE_URL}/api`,
   withCredentials: true, // send cookies for refresh token
 });
 
@@ -23,7 +25,7 @@ api.interceptors.response.use(
       originalReq._retry = true;
       try {
         // use axios (no interceptors) to call refresh endpoint
-        const res = await axios.post("http://localhost:5000/api/auth/refresh", {}, { withCredentials: true });
+        const res = await axios.post(`${BASE_URL}/api/auth/refresh`, {}, { withCredentials: true });
         const newToken = res.data.token;
         if (newToken) {
           localStorage.setItem("token", newToken);
