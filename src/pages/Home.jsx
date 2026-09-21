@@ -4,6 +4,7 @@ import { motion as Motion } from "framer-motion";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../assets/css/style.css";
 import api from "../api/axios";
+import heroImage from "../assets/images/Adobe Express - file.png";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -228,7 +229,7 @@ export default function Home() {
 
         <Motion.div className="hero-illustration" variants={itemVariants}>
           <img
-            src="/src/assets/images/Adobe Express - file.png"
+            src={heroImage}
             alt="Education Illustration"
           />
         </Motion.div>

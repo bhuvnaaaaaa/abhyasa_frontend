@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 import api from "../api/axios";
 import { useAuth } from "../auth/AuthContext";
+import logo from "../assets/images/logo.jpg";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -81,7 +81,7 @@ function Navbar() {
     <header>
       <nav>
         <div className="logo">
-          <img src="src/assets/images/logo.jpg" alt="logo" onClick={handleHomeClick} style={{cursor: 'pointer'}} />
+          <img src={logo} alt="logo" onClick={handleHomeClick} style={{cursor: 'pointer'}} />
         </div>
 
         <div id="nav-menu-container" className="nav-menu-container">
@@ -115,7 +115,7 @@ function Navbar() {
            <div className="nav-buttons">
              {isAuthenticated ? (
                <>
-                 <motion.button 
+                 <button 
                    onClick={async () => {
                     try {
                       await api.post("/auth/logout");
@@ -126,26 +126,15 @@ function Navbar() {
                     logout();
                     navigate("/");
                   }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                 >Logout</motion.button>
+                 >Logout</button>
                </>
             ) : (
               <>
                  <Link to="/login">
-                   <motion.button 
-                     whileHover={{ scale: 1.02 }}
-                     whileTap={{ scale: 0.98 }}
-                     transition={{ duration: 0.15 }}
-                   >Login</motion.button>
+                   <button>Login</button>
                  </Link>
                  <Link to="/signup">
-                   <motion.button 
-                     whileHover={{ scale: 1.02 }}
-                     whileTap={{ scale: 0.98 }}
-                     transition={{ duration: 0.15 }}
-                   >Sign Up</motion.button>
+                   <button>Sign Up</button>
                  </Link>
               </>
             )}
