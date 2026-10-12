@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy source code and config
 COPY . .
@@ -31,7 +31,7 @@ ENV PORT=3000
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 
 # Copy built frontend assets from builder stage
 COPY --from=builder /app/dist ./dist
