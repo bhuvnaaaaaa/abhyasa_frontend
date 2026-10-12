@@ -172,7 +172,7 @@ nav {
 .hero-illustration {
   flex: 1;
   overflow: hidden;
-  background-color: teal;
+  background-color: var(--ui-primary, #0f766e);
 }
 
 .hero-illustration img {
@@ -1783,11 +1783,16 @@ nav {
 #hero {
   min-height: calc(100vh - 76px);
   height: auto;
+  background: var(--ui-primary);
 }
 
 .hero-left {
   background: var(--ui-primary);
   padding: clamp(2rem, 4vw, 4rem);
+}
+
+.hero-illustration {
+  background: var(--ui-primary);
 }
 
 .hero-left h1 {
@@ -2021,7 +2026,7 @@ nav {
 .contact-card h3 {
   font-size: 1rem;
   margin-bottom: 0.6rem;
-  color: #dcfffa;
+  color: #cccccc;
 }
 
 .contact-card a,
@@ -2082,10 +2087,13 @@ nav {
 #hero h1,
 #hero h2,
 #about h2,
-.contact-brand h2,
-.contact-form-card h3,
-.contact-card h3 {
+.contact-form-card h3 {
   color: #333 !important;
+}
+
+.contact-brand h2,
+.contact-card h3 {
+  color: #cccccc !important;
 }
 
 .footer-copy {

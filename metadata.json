@@ -1,0 +1,8 @@
+{
+  "name": "Abhyasa - Digital Learning Platform",
+  "description": "Interactive after-school learning platform offering video explanations, study materials, and solutions for textbook questions across boards and classes.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

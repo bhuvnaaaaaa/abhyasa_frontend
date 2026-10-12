@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import StudyMaterial from "./pages/StudyMaterial";
 import AdminPanel from "./pages/AdminPanel";
 import ChapterView from "./pages/ChapterView";
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { AuthProvider } from "./auth/AuthContext";
 
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/study-material" element={<StudyMaterial />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
         <Route path="/chapter/:id" element={<ChapterView />} />
       </Routes>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API || "/api";
 
 // Loads the Razorpay checkout script once, reuses it on repeat clicks
 function loadRazorpayScript() {

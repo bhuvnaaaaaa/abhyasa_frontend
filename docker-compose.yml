@@ -1,0 +1,51 @@
+services:
+  # Abhyasa Full-Stack Application (Express + Vite SPA)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abhyasa-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - SUBSCRIPTION_PRICE_INR=${SUBSCRIPTION_PRICE_INR:-99}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads-data:/app/backend/uploads
+
+  # Redis Cache Layer
+  redis:
+    image: redis:7-alpine
+    container_name: abhyasa-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --save 60 1
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:
+    driver: local
+  uploads-data:
+    driver: local

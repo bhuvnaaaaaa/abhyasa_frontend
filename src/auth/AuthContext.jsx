@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         return { isAuthenticated: true, user: payload };
-      } catch (err) {
+      } catch {
         auth.clearAuth();
         return { isAuthenticated: false, user: null };
       }

@@ -17,7 +17,7 @@ export default function Login() {
     password: "",
   });
   const [errors, setErrors] = useState({});
-  const [generalError, setGeneralError] = useState("");
+  const [generalError, setGeneralError] = useState(() => location.state?.message || "");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState({});
@@ -36,12 +36,6 @@ export default function Login() {
       }
     };
   }, [isAuthenticated, navigate, redirectTo]);
-
-  useEffect(() => {
-    if (location.state?.message) {
-      setGeneralError(location.state.message);
-    }
-  }, [location.state]);
 
   const validateField = useCallback((name, value) => {
     const error = {};

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 const POLL_INTERVAL_MS = 3000;
 const QR_EXPIRY_MS = 15 * 60 * 1000; // matches close_by on the backend
 

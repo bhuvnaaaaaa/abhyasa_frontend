@@ -4,23 +4,36 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server.ts",
     "build": "vite build",
+    "start": "tsx server.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "axios": "^1.7.9",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
     "express-rate-limit": "^8.6.2",
     "framer-motion": "^13.2.0",
+    "ioredis": "^6.0.0",
     "js-cookie": "^3.0.8",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.1",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.1.0",
     "razorpay": "^2.9.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
     "remark-gfm": "^4.0.1",
-    "resend": "^6.20.0"
+    "resend": "^6.20.0",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

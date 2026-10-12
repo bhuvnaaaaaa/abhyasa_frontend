@@ -26,7 +26,7 @@ export default function Signup({ isModal = false, onSuccess }) {
   });
 
   const [errors, setErrors] = useState({});
-  const [generalError, setGeneralError] = useState("");
+  const [generalError, setGeneralError] = useState(() => location.state?.message || "");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -50,12 +50,6 @@ export default function Signup({ isModal = false, onSuccess }) {
       }
     };
   }, [isAuthenticated, isModal, navigate, onSuccess, redirectTo]);
-
-  useEffect(() => {
-    if (location.state?.message) {
-      setGeneralError(location.state.message);
-    }
-  }, [location.state]);
 
   const setRegistrationTypeWithClear = (type) => {
     setRegistrationType(type);
