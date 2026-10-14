@@ -96,7 +96,6 @@ const seedDatabase = async () => {
                 description: chapterData.description,
                 content: chapterData.content,
                 subject: subject._id,
-                videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' // Placeholder URL
               })
             );
           }

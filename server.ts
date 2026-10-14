@@ -25,8 +25,9 @@ import { mockBoards, mockGrades, mockSubjects, mockChapters } from "./src/api/mo
 connectDB();
 
 const app = express();
+app.set("trust proxy", 1);
 const isProduction = process.env.NODE_ENV === "production";
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 // CORS setup: allow incoming requests with credentials
 app.use(
@@ -104,6 +105,21 @@ app.use("/api", (req, res, next) => {
     if (req.path === "/auth/forgot-password" || req.path === "/auth/verify-otp" || req.path === "/auth/logout") {
       return res.json({ success: true, message: "OK" });
     }
+    if (req.path === "/auth/verify-registration-otp") {
+      const payload = Buffer.from(
+        JSON.stringify({ role: "student", email: req.body?.email || "student@abhyasa.com", name: "Student" })
+      ).toString("base64");
+      return res.json({
+        success: true,
+        message: "Email verified successfully! Welcome to Abhyasa.",
+        token: `mock_jwt.${payload}.mock_sig`,
+        userId: "mock_user_1",
+        user: { name: "Student", email: req.body?.email || "student@abhyasa.com", role: "user" },
+      });
+    }
+    if (req.path === "/auth/resend-registration-otp") {
+      return res.json({ success: true, message: "A fresh 6-digit verification code has been sent to your email." });
+    }
     if (req.path === "/payment/create-order") {
       return res.json({ orderId: `order_${Date.now()}`, amount: 9900, currency: "INR", keyId: "rzp_test_mock" });
     }
@@ -154,7 +170,10 @@ app.post("/api/contact", contactLimiter, async (req, res) => {
     if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || "noreply@abhyasa.com",
+        from:
+          process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes("onboarding@resend.dev")
+            ? process.env.EMAIL_FROM
+            : "Abhyasa <support@abhyasalearning.in>",
         to: process.env.ADMIN_EMAIL,
         replyTo: emailTrimmed,
         subject: `New Contact: ${nameTrimmed}`,

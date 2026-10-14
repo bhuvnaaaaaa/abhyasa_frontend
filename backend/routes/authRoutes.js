@@ -1,6 +1,8 @@
 import express from "express";
 import { 
   registerUser, 
+  verifyRegistrationOtp,
+  resendRegistrationOtp,
   loginUser, 
   refreshAccessToken, 
   logoutUser, 
@@ -16,6 +18,8 @@ import { requireAuth } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router.post("/register", registerUser);
+router.post("/verify-registration-otp", verifyRegistrationOtp);
+router.post("/resend-registration-otp", resendRegistrationOtp);
 router.post("/login", loginLimiter, loginUser);
 router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);

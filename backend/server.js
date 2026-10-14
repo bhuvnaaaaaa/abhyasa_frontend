@@ -18,6 +18,7 @@ import { handleWebhook } from "./controllers/paymentController.js";
 connectDB();
 
 const app = express();
+app.set("trust proxy", 1);
 
 // (Removed Google OAuth/passport setup)
 
@@ -84,7 +85,10 @@ app.post("/api/contact", async (req, res) => {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const emailResult = await resend.emails.send({
-      from: process.env.EMAIL_FROM,
+      from:
+        process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes("onboarding@resend.dev")
+          ? process.env.EMAIL_FROM
+          : "Abhyasa <support@abhyasalearning.in>",
       to: process.env.ADMIN_EMAIL,
       replyTo: emailTrimmed,
       subject: `New Contact: ${nameTrimmed}`,

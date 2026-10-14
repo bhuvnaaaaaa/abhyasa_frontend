@@ -31,10 +31,14 @@ export default function SubscribeButton({ onSuccess }) {
       }
 
       // Step 1: ask backend to create the order
+      const token = localStorage.getItem("token");
       const orderRes = await fetch(`${API_BASE}/payment/create-order`, {
         method: "POST",
-        credentials: "include", // sends the auth cookie your requireAuth middleware expects
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       if (!orderRes.ok) {
@@ -60,7 +64,10 @@ export default function SubscribeButton({ onSuccess }) {
             const verifyRes = await fetch(`${API_BASE}/payment/verify`, {
               method: "POST",
               credentials: "include",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
               body: JSON.stringify(response),
             });
 

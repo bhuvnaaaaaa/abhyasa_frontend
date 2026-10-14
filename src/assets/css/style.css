@@ -740,40 +740,15 @@ footer .social-links a {
   justify-content: center;
   padding: 2rem 1.5rem;
   overflow: hidden;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 50%, #042f2e 100%);
 }
 
 .auth-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  overflow: hidden;
+  display: none !important;
 }
 
 .auth-bg-gradient {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  z-index: 1;
-}
-
-.auth-bg-gradient::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, #06beb6, #48b1bf, #6dddcd, #c2f5bf, #667eea, #764ba2, #f093fb, #f5576c);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-  opacity: 0.8;
-  z-index: -1;
+  display: none !important;
 }
 
 
@@ -1389,11 +1364,12 @@ footer .social-links a {
 /* Selection Grid Styles */
 .selection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 340px));
   gap: 25px;
   width: 100%;
   max-width: 1200px;
   justify-content: center;
+  align-items: start;
   margin-top: 2rem;
 }
 
@@ -1407,6 +1383,8 @@ footer .social-links a {
   border: 2px solid transparent;
   position: relative;
   overflow: hidden;
+  height: auto;
+  align-self: start;
 }
 
 .selection-card::before {

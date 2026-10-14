@@ -1,6 +1,12 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import sharp from "sharp";
 import User from "../models/User.js";
+import Admin from "../models/adminModel.js";
+import {
+  sendPaymentReceiptEmail,
+  sendAdminPaymentNotificationEmail,
+} from "../utils/emailService.js";
 
 let razorpay = null;
 
@@ -17,33 +23,79 @@ function getRazorpayInstance() {
   return razorpay;
 }
 
-async function activateSubscription(userId, source) {
+/**
+ * Activates 30-day subscription, updates user model, and triggers receipts
+ */
+async function activateSubscription(userId, paymentId, paymentMethod = "UPI QR", payerDetails = {}) {
   if (!userId) {
-    console.warn(`Webhook event (${source}) had no userId in notes — cannot activate subscription`);
-    return;
+    console.warn(`Payment activation failed: no userId provided`);
+    return null;
   }
+
   const expiryDate = new Date();
   expiryDate.setDate(expiryDate.getDate() + 30);
 
-  await User.findByIdAndUpdate(userId, {
-    subscriptionActive: true,
-    subscriptionExpiresAt: expiryDate,
-  });
+  let user = await User.findById(userId);
+  let isAdminAccount = false;
 
-  console.log(`Subscription activated via ${source} for user ${userId}`);
+  if (!user) {
+    user = await Admin.findById(userId);
+    isAdminAccount = true;
+  }
+
+  if (!user) {
+    console.warn(`Payment activation: user with ID ${userId} not found`);
+    return null;
+  }
+
+  user.subscriptionActive = true;
+  user.subscriptionExpiresAt = expiryDate;
+  user.payment = true;
+  await user.save();
+
+  const amount = Number(process.env.SUBSCRIPTION_PRICE_INR) || 99;
+
+  // Send official receipt email to registered user (and copy to payer email if different)
+  if (user.email) {
+    sendPaymentReceiptEmail({
+      to: user.email,
+      payerEmail: payerDetails.email,
+      name: user.name || "Student",
+      amount,
+      paymentId: paymentId || `pay_${Date.now()}`,
+      expiresAt: expiryDate,
+    }).catch((err) => console.error("Receipt email error:", err));
+  }
+
+  // Send detailed notification to Admin email asynchronously
+  sendAdminPaymentNotificationEmail({
+    user: {
+      name: user.name,
+      email: user.email,
+      role: isAdminAccount ? "admin" : "user",
+    },
+    payerDetails,
+    amount,
+    paymentId: paymentId || `pay_${Date.now()}`,
+    paymentMethod,
+  }).catch((err) => console.error("Admin notification email error:", err));
+
+  console.log(`[Billing] Subscription activated for ${user.email} (${paymentId})`);
+  return { user, expiryDate };
 }
 
-// Create Razorpay order for subscription
+// Create Razorpay order for subscription (Modal checkout)
 export const createOrder = async (req, res) => {
   try {
-    const amount = (process.env.SUBSCRIPTION_PRICE_INR || 499) * 100; // Convert to paise
+    const amount = (Number(process.env.SUBSCRIPTION_PRICE_INR) || 99) * 100; // paise
 
     const options = {
-      amount: amount,
+      amount,
       currency: "INR",
-      receipt: `s_${Date.now()}`, // kept short — Razorpay caps receipt at 40 chars
+      receipt: `s_${Date.now()}`.slice(0, 40),
       notes: {
-        userId: req.user._id.toString(), // safer than encoding userId in receipt
+        userId: req.user?._id?.toString() || "subscriber",
+        userEmail: req.user?.email || "",
       },
     };
 
@@ -61,27 +113,76 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// Create a UPI QR code for subscription payment
+/**
+ * Create a UPI QR code for subscription payment with clean square QR extraction
+ */
 export const createQrCode = async (req, res) => {
   try {
-    const amount = (process.env.SUBSCRIPTION_PRICE_INR || 499) * 100; // paise
+    const amount = (Number(process.env.SUBSCRIPTION_PRICE_INR) || 99) * 100; // paise
 
     const qrCode = await getRazorpayInstance().qrCode.create({
       type: "upi_qr",
-      name: "Abhyasa Subscription",
+      name: "Abhyasa",
       usage: "single_use",
       fixed_amount: true,
       payment_amount: amount,
-      description: "Test Yourself subscription",
-      close_by: Math.floor(Date.now() / 1000) + 15 * 60, // auto-expires in 15 min
+      description: "Test Yourself 30-Day Access",
+      close_by: Math.floor(Date.now() / 1000) + 15 * 60, // 15 min TTL
       notes: {
-        userId: req.user._id.toString(),
+        userId: req.user?._id?.toString() || "subscriber",
+        userEmail: req.user?.email || "",
+        userName: req.user?.name || "",
       },
     });
 
+    // Extract the clean square QR code without poster banners or templates
+    let cleanImageUrl = qrCode.image_url;
+    try {
+      if (qrCode.image_url) {
+        const imgRes = await fetch(qrCode.image_url);
+        if (imgRes.ok) {
+          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+          const image = sharp(imgBuffer);
+          const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+          const w = info.width, h = info.height, ch = info.channels;
+
+          // Locate the square QR code matrix in the middle of the Razorpay poster
+          let minX = w, maxX = 0, minY = h, maxY = 0;
+          for (let y = Math.floor(h * 0.35); y < Math.floor(h * 0.72); y++) {
+            for (let x = 0; x < w; x++) {
+              const idx = (y * w + x) * ch;
+              if (data[idx] < 30 && data[idx + 1] < 30 && data[idx + 2] < 30) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+
+          if (maxX > minX && maxY > minY) {
+            const quietZone = 24;
+            const cropLeft = Math.max(0, minX - quietZone);
+            const cropTop = Math.max(0, minY - quietZone);
+            const cropWidth = Math.min(w - cropLeft, (maxX - minX) + quietZone * 2);
+            const cropHeight = Math.min(h - cropTop, (maxY - minY) + quietZone * 2);
+
+            const croppedBuffer = await sharp(imgBuffer)
+              .extract({ left: cropLeft, top: cropTop, width: cropWidth, height: cropHeight })
+              .png({ quality: 100 })
+              .toBuffer();
+
+            cleanImageUrl = `data:image/png;base64,${croppedBuffer.toString("base64")}`;
+          }
+        }
+      }
+    } catch (cropErr) {
+      console.warn("Clean QR crop fallback to raw image_url:", cropErr.message);
+    }
+
     res.json({
       qrCodeId: qrCode.id,
-      imageUrl: qrCode.image_url,
+      imageUrl: cleanImageUrl,
       amount: qrCode.payment_amount,
     });
   } catch (error) {
@@ -90,22 +191,88 @@ export const createQrCode = async (req, res) => {
   }
 };
 
-// Frontend polls this to know when the webhook has activated the subscription
+// Frontend polls this to know when the payment has been completed and verified
 export const getSubscriptionStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const userId = req.user?._id;
+    let user = await User.findById(userId);
+    if (!user) {
+      user = await Admin.findById(userId);
+    }
+
     const now = new Date();
-    const active = Boolean(
-      user.subscriptionActive && user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
+    const isAlreadyActive = Boolean(
+      user?.subscriptionActive && user?.subscriptionExpiresAt && user.subscriptionExpiresAt > now
     );
-    res.json({ active, expiresAt: user.subscriptionExpiresAt || null });
+
+    if (isAlreadyActive) {
+      return res.json({
+        active: true,
+        expiresAt: user.subscriptionExpiresAt,
+        message: "Subscription active",
+      });
+    }
+
+    // Direct reconciliation with Razorpay if qrCodeId is provided in query
+    const { qrCodeId } = req.query;
+    if (qrCodeId && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+      try {
+        const payments = await getRazorpayInstance().qrCode.fetchAllPayments(String(qrCodeId));
+        if (payments && Array.isArray(payments.items) && payments.items.length > 0) {
+          const paidItem = payments.items.find(
+            (p) => p.status === "captured" || p.status === "authorized"
+          );
+
+          if (paidItem) {
+            const payerDetails = {
+              email: paidItem.email,
+              contact: paidItem.contact,
+              vpa: paidItem.vpa,
+              method: paidItem.method,
+            };
+            const activationResult = await activateSubscription(
+              userId,
+              paidItem.id,
+              "UPI QR",
+              payerDetails
+            );
+            return res.json({
+              active: true,
+              paymentId: paidItem.id,
+              expiresAt: activationResult?.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              message: "Payment verified successfully!",
+            });
+          }
+        }
+
+        // Also check QR code status directly if fetchAllPayments has latency
+        const qrEntity = await getRazorpayInstance().qrCode.fetch(String(qrCodeId));
+        if (qrEntity && (qrEntity.payments_amount_received > 0 || qrEntity.status === "closed")) {
+          const activationResult = await activateSubscription(
+            userId,
+            `pay_${qrEntity.id}`,
+            "UPI QR"
+          );
+          return res.json({
+            active: true,
+            paymentId: `pay_${qrEntity.id}`,
+            expiresAt: activationResult?.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            message: "Payment verified successfully!",
+          });
+        }
+      } catch (checkErr) {
+        console.warn("Direct Razorpay QR check non-fatal:", checkErr.message);
+      }
+    }
+
+    res.json({ active: false, expiresAt: user?.subscriptionExpiresAt || null });
   } catch (error) {
     console.error("Error fetching subscription status:", error);
     res.status(500).json({ message: "Failed to fetch subscription status" });
   }
 };
 
-
+// Razorpay checkout modal payment verification
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -120,23 +287,38 @@ export const verifyPayment = async (req, res) => {
     const generatedSignature = hmac.digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      console.error(`Payment signature mismatch for user ${req.user._id}. Payment ID: ${razorpay_payment_id}`);
+      console.error(`Signature mismatch for user ${req.user._id}. Payment ID: ${razorpay_payment_id}`);
       return res.status(400).json({ message: "Invalid payment signature", paymentId: razorpay_payment_id });
     }
 
-    // Activate subscription for 30 days
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 30);
+    // Fetch payment details from Razorpay to retrieve payer email/contact
+    let payerDetails = {};
+    try {
+      const paymentItem = await getRazorpayInstance().payments.fetch(razorpay_payment_id);
+      if (paymentItem) {
+        payerDetails = {
+          email: paymentItem.email,
+          contact: paymentItem.contact,
+          vpa: paymentItem.vpa,
+          method: paymentItem.method,
+        };
+      }
+    } catch (fetchErr) {
+      console.warn("Could not fetch payment details from Razorpay:", fetchErr.message);
+    }
 
-    await User.findByIdAndUpdate(req.user._id, {
-      subscriptionActive: true,
-      subscriptionExpiresAt: expiryDate,
-    });
+    const activationResult = await activateSubscription(
+      req.user._id,
+      razorpay_payment_id,
+      "Razorpay Checkout",
+      payerDetails
+    );
 
     res.json({
       success: true,
       message: "Subscription activated successfully",
-      expiresAt: expiryDate,
+      paymentId: razorpay_payment_id,
+      expiresAt: activationResult?.expiryDate,
     });
   } catch (error) {
     console.error("Error verifying payment:", error);
@@ -144,38 +326,47 @@ export const verifyPayment = async (req, res) => {
   }
 };
 
-// Razorpay webhook handler (backup activation path if frontend verify call never fires —
-// e.g. user closes tab right after paying)
+// Razorpay webhook handler
 export const handleWebhook = async (req, res) => {
   try {
     const signature = req.headers["x-razorpay-signature"];
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // req.body is a raw Buffer here (see server.js — mounted with express.raw()
-    // before express.json()). HMAC must be computed over the raw bytes, not JSON.stringify().
-    const hmac = crypto.createHmac("sha256", webhookSecret);
-    hmac.update(req.body);
-    const expectedSignature = hmac.digest("hex");
+    if (webhookSecret) {
+      const hmac = crypto.createHmac("sha256", webhookSecret);
+      hmac.update(req.body);
+      const expectedSignature = hmac.digest("hex");
 
-    if (expectedSignature !== signature) {
-      console.error("Invalid webhook signature received");
-      return res.status(400).send("Invalid signature");
+      if (expectedSignature !== signature) {
+        console.error("Invalid webhook signature received");
+        return res.status(400).send("Invalid signature");
+      }
     }
 
     const payload = JSON.parse(req.body.toString("utf8"));
     const event = payload.event;
 
     if (event === "payment.captured") {
-      // Order-based payment (Checkout modal flow) — notes live on the payment entity
       const payment = payload.payload.payment.entity;
       const userId = payment.notes?.userId;
-      await activateSubscription(userId, `payment.captured (${payment.id})`);
+      const payerDetails = {
+        email: payment.email,
+        contact: payment.contact,
+        vpa: payment.vpa,
+        method: payment.method,
+      };
+      await activateSubscription(userId, payment.id, payment.method || "Card/Netbanking", payerDetails);
     } else if (event === "qr_code.credited") {
-      // QR-based payment — notes live on the qr_code entity, NOT the payment entity
       const qrCode = payload.payload.qr_code.entity;
       const payment = payload.payload.payment.entity;
-      const userId = qrCode.notes?.userId;
-      await activateSubscription(userId, `qr_code.credited (${payment.id})`);
+      const userId = qrCode.notes?.userId || payment.notes?.userId;
+      const payerDetails = {
+        email: payment.email,
+        contact: payment.contact,
+        vpa: payment.vpa,
+        method: "UPI QR",
+      };
+      await activateSubscription(userId, payment.id, "UPI QR", payerDetails);
     }
 
     res.status(200).send("OK");

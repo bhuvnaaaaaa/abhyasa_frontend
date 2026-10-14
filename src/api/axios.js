@@ -3,7 +3,9 @@ import Cookies from "js-cookie";
 import auth from "../utils/auth";
 import { mockBoards, mockGrades, mockSubjects, mockChapters } from "./mockData";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "";
+// Use same-origin relative /api so requests hit the local integrated backend instead of the external repo
+const rawApiUrl = import.meta.env.VITE_API_URL || "";
+const BASE_URL = rawApiUrl.includes("abhyasa-backend.onrender.com") ? "" : rawApiUrl;
 
 let chaptersStore = [...mockChapters];
 
@@ -181,8 +183,9 @@ api.interceptors.response.use(
   async (err) => {
     const originalReq = err.config;
 
-    // If 401, attempt refresh token first
-    if (err.response && err.response.status === 401 && !originalReq._retry) {
+    // If 401 on protected requests (not auth routes), attempt refresh token
+    const isAuthRoute = originalReq?.url?.includes("/auth/");
+    if (err.response && err.response.status === 401 && !originalReq._retry && !isAuthRoute) {
       originalReq._retry = true;
       try {
         const refreshEndpoint = BASE_URL ? `${BASE_URL}/api/auth/refresh` : "/api/auth/refresh";
@@ -195,9 +198,8 @@ api.interceptors.response.use(
           return api(originalReq);
         }
       } catch (refreshErr) {
-        console.warn("Refresh failed, redirecting to login", refreshErr);
+        console.warn("Token refresh failed", refreshErr);
         auth.clearAuth();
-        window.location.href = "/login";
         return Promise.reject(refreshErr);
       }
     }

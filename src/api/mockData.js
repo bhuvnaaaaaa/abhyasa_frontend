@@ -37,7 +37,6 @@ export const mockChapters = [
     title: "Life Processes",
     name: "Life Processes",
     subject: "s_bio_cbse_10",
-    videoUrl: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
     content: `# Chapter 1: Life Processes
 
 Life processes are the fundamental biological mechanisms by which organisms maintain equilibrium and survive.
@@ -94,7 +93,6 @@ Life processes are the fundamental biological mechanisms by which organisms main
     title: "Control and Coordination",
     name: "Control and Coordination",
     subject: "s_bio_cbse_10",
-    videoUrl: "",
     content: `# Chapter 2: Control and Coordination
 
 Examines how animals and plants coordinate their responses through nervous impulses and hormonal secretions.
@@ -126,7 +124,6 @@ Examines how animals and plants coordinate their responses through nervous impul
     title: "Chemical Reactions and Equations",
     name: "Chemical Reactions and Equations",
     subject: "s_chem_cbse_10",
-    videoUrl: "",
     content: `# Chapter 1: Chemical Reactions and Equations
 
 A chemical reaction involves breaking old chemical bonds and forming new bonds to produce substances with novel characteristics.
@@ -170,7 +167,6 @@ A chemical reaction involves breaking old chemical bonds and forming new bonds t
     title: "Light - Reflection and Refraction",
     name: "Light - Reflection and Refraction",
     subject: "s_phy_cbse_10",
-    videoUrl: "",
     content: `# Chapter 1: Light - Reflection and Refraction
 
 Light travels in rectilinear propagation in homogeneous media and undergoes reflection at polished interfaces and refraction at boundary media.
@@ -214,7 +210,6 @@ Light travels in rectilinear propagation in homogeneous media and undergoes refl
     title: "Real Numbers",
     name: "Real Numbers",
     subject: "s_math_cbse_10",
-    videoUrl: "",
     content: `# Chapter 1: Real Numbers
 
 Covers Euclid's Division Lemma and the Fundamental Theorem of Arithmetic.
@@ -239,7 +234,6 @@ Covers Euclid's Division Lemma and the Fundamental Theorem of Arithmetic.
     title: "Resources and Development",
     name: "Resources and Development",
     subject: "s_geo_cbse_10",
-    videoUrl: "",
     content: `# Chapter 1: Resources and Development
 
 Explores natural resources, conservation practices, land utilization, and soil distribution in India.`,

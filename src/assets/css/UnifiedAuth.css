@@ -5,18 +5,14 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 50%, #042f2e 100%);
 }
 
-.auth-bg-gradient {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0.1;
-  background: url('data:image/svg+xml,...');
-  pointer-events: none;
+.auth-modal-overlay .unified-auth,
+[class*="modal"] .unified-auth {
+  min-height: auto;
+  background: transparent;
+  padding: 0;
 }
 
 .auth-card {

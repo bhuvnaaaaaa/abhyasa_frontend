@@ -180,18 +180,6 @@ const ChapterView = () => {
       ) : activeSection === "in-text" && (
         <div className="section-content" ref={inTextRef}>
           <h2 className="section-title">In-Text Solutions</h2>
-          {chapter.videoUrl && (
-            <div className="chapter-video-wrapper" style={{ marginBottom: 18 }}>
-              <iframe
-                title="chapter-video"
-                src={chapter.videoUrl}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ width: '100%', height: 420, borderRadius: 8 }}
-              />
-            </div>
-          )}
           
           {/* Chapter Content Markdown Render */}
           {chapter.content && typeof chapter.content === 'string' && (
@@ -363,9 +351,19 @@ const ChapterView = () => {
                     )}
                     <button
                       onClick={() => {
-                        if (currentQuestion >= 1 && !hasPaid && isAuthenticated) {
-                          setLocked(true);
-                        } else if (currentQuestion < questionsContent.length - 1) {
+                        if (currentQuestion >= 1) {
+                          if (!isAuthenticated) {
+                            setAuthReturnSection("test-yourself");
+                            setShowAuthModal(true);
+                            return;
+                          }
+                          if (!hasPaid && !isAdmin) {
+                            setLocked(true);
+                            return;
+                          }
+                        }
+
+                        if (currentQuestion < questionsContent.length - 1) {
                           setCurrentQuestion(currentQuestion + 1);
                         } else {
                           setShowResults(true);

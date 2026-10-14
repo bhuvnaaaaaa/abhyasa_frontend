@@ -5,7 +5,7 @@ import { isActiveWithinHours, setLastActive, getToken } from "../utils/auth";
 import { useAuth } from "../auth/AuthContext";
 import "../assets/css/UnifiedAuth.css";
 
-export default function Signup({ isModal = false, onSuccess }) {
+export default function Signup({ isModal = false, onSuccess, initialIsLogin = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
@@ -13,14 +13,14 @@ export default function Signup({ isModal = false, onSuccess }) {
   const firstInputRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [registrationType, setRegistrationType] = useState("email");
 
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+    email: location.state?.email || "",
     phone: "",
-    identifier: "",
+    identifier: location.state?.email || "",
     password: "",
     confirmPassword: "",
   });
@@ -31,6 +31,17 @@ export default function Signup({ isModal = false, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState({});
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   useEffect(() => {
     const token = getToken();
@@ -197,20 +208,27 @@ export default function Signup({ isModal = false, onSuccess }) {
         timeout: 20000
       });
 
-      login(response.data.token);
-      localStorage.setItem("hasPaid", String(response.data.payment ?? false));
-      setLastActive();
+      if (response.data?.requireOtp) {
+        setVerifyingEmail(response.data.email || signupData.email);
+        setIsVerifyingOtp(true);
+        setResendCooldown(30);
+        setSuccessMessage("Verification code sent! Please check your email inbox and enter the 6-digit OTP below.");
+        return;
+      }
 
-      setSuccessMessage("Account created successfully! Redirecting...");
-
-      setTimeout(() => {
-        if (isModal && onSuccess) {
-          onSuccess();
-        } else {
-          navigate(redirectTo, { replace: true });
-        }
-      }, 1200);
-
+      if (response.data?.token) {
+        login(response.data.token);
+        localStorage.setItem("hasPaid", String(response.data.payment ?? false));
+        setLastActive();
+        setSuccessMessage("Account created successfully! Redirecting...");
+        setTimeout(() => {
+          if (isModal && onSuccess) {
+            onSuccess();
+          } else {
+            navigate(redirectTo, { replace: true });
+          }
+        }, 1200);
+      }
     } catch (err) {
       if (err.name === 'CanceledError') return;
 
@@ -225,7 +243,7 @@ export default function Signup({ isModal = false, onSuccess }) {
         const message = err.response.data?.message || "Registration failed";
 
         if (status === 409) {
-          setGeneralError("An account with this email/phone already exists.");
+          setGeneralError("An account with this email/phone already exists. Please log in.");
           setTimeout(() => setIsLogin(true), 2000);
         } else if (status === 400) {
           setGeneralError(message);
@@ -237,6 +255,60 @@ export default function Signup({ isModal = false, onSuccess }) {
       } else {
         setGeneralError("Server is unavailable. Please try again later.");
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (isLoading) return;
+    if (!otp.trim() || otp.trim().length !== 6) {
+      setGeneralError("Please enter the complete 6-digit verification code");
+      return;
+    }
+
+    setIsLoading(true);
+    setGeneralError("");
+    setSuccessMessage("");
+
+    try {
+      const res = await axios.post("/auth/verify-registration-otp", {
+        email: verifyingEmail,
+        otp: otp.trim()
+      });
+
+      if (res.data?.token) {
+        login(res.data.token);
+        localStorage.setItem("hasPaid", String(res.data.user?.payment ?? false));
+        setLastActive();
+        setSuccessMessage("Email verified successfully! Welcome to Abhyasa.");
+        setTimeout(() => {
+          if (isModal && onSuccess) {
+            onSuccess();
+          } else {
+            navigate(redirectTo, { replace: true });
+          }
+        }, 1000);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Invalid or expired verification code. Please try again.";
+      setGeneralError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    setIsLoading(true);
+    setGeneralError("");
+    try {
+      await axios.post("/auth/resend-registration-otp", { email: verifyingEmail });
+      setResendCooldown(30);
+      setSuccessMessage("A fresh verification code has been sent to your email.");
+    } catch (err) {
+      setGeneralError(err.response?.data?.message || "Failed to resend code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -255,8 +327,10 @@ export default function Signup({ isModal = false, onSuccess }) {
     abortControllerRef.current = new AbortController();
 
     try {
+      const idVal = formData.identifier.trim();
       const res = await axios.post("/auth/login", {
-        identifier: formData.identifier.trim(),
+        email: idVal,
+        identifier: idVal,
         password: formData.password
       }, {
         signal: abortControllerRef.current.signal,
@@ -269,11 +343,13 @@ export default function Signup({ isModal = false, onSuccess }) {
 
       setSuccessMessage("Logged in successfully! Redirecting...");
 
+      const targetRoute = res.data.role === "admin" ? "/admin" : redirectTo;
+
       setTimeout(() => {
         if (isModal && onSuccess) {
           onSuccess();
         } else {
-          navigate(redirectTo, { replace: true });
+          navigate(targetRoute, { replace: true });
         }
       }, 800);
 
@@ -288,10 +364,26 @@ export default function Signup({ isModal = false, onSuccess }) {
         const status = err.response.status;
         const message = err.response.data?.message || "Login failed";
 
+        if (status === 403 && err.response.data?.code === "EMAIL_NOT_VERIFIED") {
+          const unverifiedEmail = err.response.data?.email || formData.identifier.trim();
+          setVerifyingEmail(unverifiedEmail);
+          setIsVerifyingOtp(true);
+          setResendCooldown(30);
+          setGeneralError("Please verify your email address to log in. We've sent a code to your email.");
+          return;
+        }
+
         if (status === 401) {
           setGeneralError("Invalid credentials. Please check your password.");
         } else if (status === 404) {
-          setGeneralError("Account not found. Please sign up first.");
+          const notFoundMsg = err.response.data?.message || "User not registered. Please sign up.";
+          setIsLogin(false);
+          setFormData(prev => ({
+            ...prev,
+            email: prev.identifier || prev.email,
+            identifier: prev.identifier || prev.email,
+          }));
+          setGeneralError(notFoundMsg);
         } else {
           setGeneralError(message);
         }
@@ -304,6 +396,7 @@ export default function Signup({ isModal = false, onSuccess }) {
   };
 
   const toggleAuthMode = () => {
+    setIsVerifyingOtp(false);
     setIsLogin(!isLogin);
     setErrors({});
     setGeneralError("");
@@ -322,13 +415,19 @@ export default function Signup({ isModal = false, onSuccess }) {
 
   return (
     <div className="unified-auth">
-      <div className="auth-bg-gradient"></div>
-
       <div className="auth-card">
         <div className="auth-header">
-          <h2>{isLogin ? "Welcome Back" : "Create Your Account"}</h2>
+          <h2>
+            {isVerifyingOtp
+              ? "Verify Your Email"
+              : isLogin
+              ? "Welcome Back"
+              : "Create Your Account"}
+          </h2>
           <p>
-            {isLogin
+            {isVerifyingOtp
+              ? "Enter the 6-digit verification code sent to your inbox"
+              : isLogin
               ? "Sign in to continue your learning journey"
               : "Join Abhyasa and start your learning journey today"
             }
@@ -347,7 +446,109 @@ export default function Signup({ isModal = false, onSuccess }) {
           </div>
         )}
 
-        {isLogin ? (
+        {isVerifyingOtp ? (
+          <form className="auth-form" onSubmit={handleVerifyOtp} noValidate>
+            <div style={{ textAlign: "center", marginBottom: "18px" }}>
+              <div style={{ fontSize: "36px", marginBottom: "6px" }}>📩</div>
+              <p style={{ fontSize: "14px", color: "#475569", margin: "0 0 4px" }}>
+                We sent a 6-digit verification code to
+              </p>
+              <strong style={{ fontSize: "15px", color: "#0f766e", wordBreak: "break-all" }}>
+                {verifyingEmail}
+              </strong>
+            </div>
+
+            <div className="input-group">
+              <input
+                id="otp"
+                name="otp"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setOtp(val);
+                  setGeneralError("");
+                }}
+                disabled={isLoading}
+                placeholder="• • • • • •"
+                autoFocus
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  letterSpacing: "12px",
+                  textAlign: "center",
+                  padding: "14px",
+                  borderRadius: "8px",
+                  border: "2px solid #0f766e",
+                  background: "#f0fdfa",
+                }}
+              />
+            </div>
+
+            <button
+              className="auth-button"
+              type="submit"
+              disabled={isLoading || otp.length !== 6}
+              aria-busy={isLoading}
+              style={{
+                marginTop: "10px",
+                opacity: isLoading || otp.length !== 6 ? 0.6 : 1,
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Verifying Code...
+                </>
+              ) : (
+                "Verify & Complete Registration"
+              )}
+            </button>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", fontSize: "13px" }}>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0 || isLoading}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: resendCooldown > 0 ? "#94a3b8" : "#0f766e",
+                  cursor: resendCooldown > 0 ? "default" : "pointer",
+                  fontWeight: 600,
+                  padding: 0,
+                  fontSize: "13px",
+                }}
+              >
+                {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend Code"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsVerifyingOtp(false);
+                  setOtp("");
+                  setGeneralError("");
+                  setSuccessMessage("");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#64748b",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontSize: "13px",
+                  textDecoration: "underline",
+                }}
+              >
+                Change Email
+              </button>
+            </div>
+          </form>
+        ) : isLogin ? (
           <form className="auth-form" onSubmit={handleLogin} noValidate>
           <div className="input-group">
             <input
@@ -395,7 +596,13 @@ export default function Signup({ isModal = false, onSuccess }) {
             {errors.password && touched.password && (
               <span className="error-text" role="alert">{errors.password}</span>
             )}
-            </div>
+          </div>
+
+          <div style={{ textAlign: "right", margin: "-6px 0 12px 0" }}>
+            <Link to="/forgot-password" className="auth-link" style={{ color: "#0f766e", fontWeight: 500, fontSize: "14px", textDecoration: "none" }}>
+              Forgot password?
+            </Link>
+          </div>
 
           <button
             className="auth-button"
@@ -558,14 +765,16 @@ export default function Signup({ isModal = false, onSuccess }) {
           </>
         )}
 
-        <div className="auth-toggle">
-          <p>
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button type="button" className="toggle-button" onClick={toggleAuthMode}>
-              {isLogin ? "Sign up now" : "Log in instead"}
-            </button>
-          </p>
-        </div>
+        {!isVerifyingOtp && (
+          <div className="auth-toggle">
+            <p>
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button type="button" className="toggle-button" onClick={toggleAuthMode}>
+                {isLogin ? "Sign up now" : "Log in instead"}
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

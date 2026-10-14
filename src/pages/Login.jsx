@@ -104,8 +104,10 @@ export default function Login() {
     abortControllerRef.current = new AbortController();
 
     try {
+      const emailVal = formData.email.trim();
       const res = await axios.post("/auth/login", {
-        email: formData.email.trim(),
+        email: emailVal,
+        identifier: emailVal,
         password: formData.password
       }, {
         signal: abortControllerRef.current.signal,
@@ -116,8 +118,10 @@ export default function Login() {
       localStorage.setItem("hasPaid", String(res.data.payment ?? false));
       setLastActive();
 
+      const targetRoute = res.data.role === "admin" ? "/admin" : redirectTo;
+
       setTimeout(() => {
-        navigate(redirectTo, { replace: true });
+        navigate(targetRoute, { replace: true });
       }, 800);
 
     } catch (err) {
@@ -136,8 +140,15 @@ export default function Login() {
         if (status === 401) {
           setGeneralError("Invalid credentials. Please check your email/phone and password.");
         } else if (status === 404) {
-          setGeneralError("Account not found. Would you like to sign up instead?");
-          setTimeout(() => navigate("/signup", { state: { from: redirectTo } }), 3000);
+          const notFoundMsg = err.response.data?.message || "User not registered. Please sign up.";
+          setGeneralError(notFoundMsg);
+          navigate("/signup", {
+            state: {
+              from: redirectTo,
+              email: formData.email.trim(),
+              message: notFoundMsg,
+            },
+          });
         } else if (status === 429) {
           setGeneralError("Too many login attempts. Please try again later.");
         } else {
@@ -153,10 +164,6 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-      <div className="auth-background">
-        <div className="auth-bg-gradient"></div>
-      </div>
-
       <div className="auth-card">
         <div className="auth-header">
           <h1 className="auth-title">Welcome Back</h1>

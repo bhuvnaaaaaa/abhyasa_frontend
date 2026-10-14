@@ -228,10 +228,6 @@ export default function ForgotPassword() {
 
   return (
     <div className="auth-container">
-      <div className="auth-background">
-        <div className="auth-bg-gradient"></div>
-      </div>
-
       <div className="auth-card">
         <div className="auth-header">
           <h1 className="auth-title">Reset Password</h1>

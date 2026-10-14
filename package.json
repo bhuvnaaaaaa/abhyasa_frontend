@@ -8,7 +8,8 @@
     "build": "vite build",
     "start": "tsx server.ts",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsx tests/api.test.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
@@ -33,6 +34,7 @@
     "react-router-dom": "^6.28.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.20.0",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15"
   },
   "devDependencies": {

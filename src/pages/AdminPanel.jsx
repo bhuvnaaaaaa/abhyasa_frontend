@@ -160,7 +160,6 @@ export default function AdminPanel() {
             <option value="">Select Subject</option>
             {subjects.map(sub => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
           </select>
-          <input value={chapterForm.videoUrl} onChange={(e) => setChapterForm({...chapterForm, videoUrl: e.target.value})} placeholder="Video URL" />
           <label>
             <input type="checkbox" checked={chapterForm.restricted} onChange={(e) => setChapterForm({...chapterForm, restricted: e.target.checked})} />
             Restricted
@@ -189,7 +188,6 @@ export default function AdminPanel() {
           <input value={questionForm.options} onChange={(e) => setQuestionForm({...questionForm, options: e.target.value})} placeholder="Options (comma separated)" required />
           <input value={questionForm.answer} onChange={(e) => setQuestionForm({...questionForm, answer: e.target.value})} placeholder="Correct Answer Index (0-based)" required />
           <input value={questionForm.reason} onChange={(e) => setQuestionForm({...questionForm, reason: e.target.value})} placeholder="Explanation" />
-          <input value={questionForm.explanationVideoUrl} onChange={(e) => setQuestionForm({...questionForm, explanationVideoUrl: e.target.value})} placeholder="Explanation Video URL" />
           <button type="submit">Add Question</button>
           <button type="button" onClick={() => setShowQuestionForm(false)}>Cancel</button>
         </form>
