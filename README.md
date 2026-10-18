@@ -1,4 +1,4 @@
-# Abhyasa (अभ्यास) — Full-Stack Digital Learning Platform
+# Abhyasa — Full-Stack Digital Learning Platform
 
 [![Node.js Version](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B%20%7C%2022%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -254,8 +254,3 @@ docker run -p 3000:3000 --env-file .env abhyasa:latest
 - **Payer Cross-Check**: Captured payment records log the UPI VPA and contact details directly into the audit record.
 - **Double Activation Guard**: Prevents redundant charges by validating user subscription expiration timestamps prior to processing fresh payments.
 
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
